@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 46, "column": 0}, "map": {"version":3,"sources":["file:///C:/ITEH/projekat/internet-tehnologije-2025-podcastplatforma_2022_0057/backend/app/api/health/route.js"],"sourcesContent":["import { NextResponse } from \"next/server\";\r\n\r\nexport async function GET() {\r\n  return NextResponse.json({ status: \"OK\" });\r\n}"],"names":[],"mappings":";;;;AAAA;;AAEO,eAAe;IACpB,OAAO,gJAAY,CAAC,IAAI,CAAC;QAAE,QAAQ;IAAK;AAC1C"}}]
+}

@@ -1,0 +1,5 @@
+[00:00:02.445] Server  LOG     ✓ Ready in 1715ms
+[00:09:30.193] Server  LOG     ○ Compiling / ...
+[00:09:34.524] Browser WARN    Image with src "http://localhost:3000/vercel.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:16:27.088] Server  ERROR   ⨯ Detected default export in '[project]/app/api/health/route.js'. Export a named export for each HTTP method instead.
+[00:16:27.096] Server  ERROR   ⨯ No HTTP methods exported in '[project]/app/api/health/route.js'. Export a named export for each HTTP method.
