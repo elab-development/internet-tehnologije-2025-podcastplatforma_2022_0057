@@ -19,37 +19,30 @@ export const users = pgTable(
     email: text("email").notNull(),
     firstName: text("first_name").notNull(),
     lastName: text("last_name").notNull(),
-    passwordHash: text("password_hash").notNull(),
+    passwordHash: text("password_hash").notNull(), 
     birthDate: timestamp("birth_date", { mode: "date" }),
     role: roleEnum("role").notNull().default("USER"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (t) => ({
-    emailUq: uniqueIndex("users_email_uq").on(t.email),
-    nameIdx: index("users_name_idx").on(t.lastName, t.firstName),
+    emailUq: uniqueIndex("users_email_uq").on(t.email), 
+    nameIdx: index("users_name_idx").on(t.lastName, t.firstName), 
   })
 );
 
 export const paidProfiles = pgTable("paid_profiles", {
   userId: text("user_id")
     .primaryKey()
-    .references(() => users.id, { onDelete: "cascade" }),
-  
-  accountNumber: text("account_number").notNull(),
+    .references(() => users.id, { onDelete: "cascade" }), 
+  accountNumber: text("account_number").notNull(), 
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const seriesTypes = pgTable(
-  "series_types",
-  {
-    id: text("id").primaryKey(),
-    name: text("name").notNull(),
-  },
-  (t) => ({
-    nameUq: uniqueIndex("series_types_name_uq").on(t.name),
-  })
-);
+export const seriesTypes = pgTable("series_types", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+});
 
 export const series = pgTable(
   "series",
@@ -66,7 +59,7 @@ export const series = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (t) => ({
-    titleIdx: index("series_title_idx").on(t.title),
+    titleIdx: index("series_title_idx").on(t.title), 
     typeIdx: index("series_type_idx").on(t.typeId),
   })
 );
@@ -77,7 +70,7 @@ export const episodes = pgTable(
     id: text("id").primaryKey(),
     seriesId: text("series_id")
       .notNull()
-      .references(() => series.id, { onDelete: "cascade" }),
+      .references(() => series.id, { onDelete: "cascade" }), 
     title: text("title").notNull(),
     durationSec: integer("duration_sec").notNull(),
     mediaPath: text("media_path").notNull(), 
@@ -99,7 +92,7 @@ export const listenProgress = pgTable(
     episodeId: text("episode_id")
       .notNull()
       .references(() => episodes.id, { onDelete: "cascade" }),
-    positionSec: integer("position_sec").notNull().default(0),
+    positionSec: integer("position_sec").notNull().default(0), 
     completed: boolean("completed").notNull().default(false),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
