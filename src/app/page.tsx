@@ -1,6 +1,6 @@
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/PublicNavbar";
 import EpisodeCard from "@/components/EpisodeCard";
-import { popularEpisodes } from "@/mock/data";
+import { episodes } from "@/mock/data";
 
 export default function HomePage() {
   return (
@@ -29,7 +29,7 @@ export default function HomePage() {
   </h2>
 
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-    {popularEpisodes.map((ep) => (
+    {episodes.map((ep) => (
       <EpisodeCard key={ep.id} episode={ep} />
     ))}
   </div>
