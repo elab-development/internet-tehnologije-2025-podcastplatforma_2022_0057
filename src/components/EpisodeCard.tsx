@@ -1,30 +1,37 @@
-import { Episode } from "@/mock/data";
+"use client";
 
-type Props = {
-  episode: Episode;
-};
+import { useAuth } from "@/components/AuthProvider";
 
+export default function EpisodeCard({ episode }: any) {
+  const { user } = useAuth();
+  const isPaid = user?.role === "PAID";
 
-
-export default function EpisodeCard({ episode }: Props) {
   return (
-    <div className="bg-stone-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
-      <div className="h-44 overflow-hidden">
-        <img
-          src={episode.image}
-          alt={episode.title}
-          className="w-full h-full object-cover"
-        />
-      </div>
+    <div className="rounded-2xl overflow-hidden shadow bg-white">
+      {/* Slika */}
+      <div className="h-40 bg-stone-300" />
 
-      <div className="p-4">
-        <h3 className="text-lg font-semibold mb-2 text-zinc-900">
+      <div className="p-5">
+        <h3 className="font-semibold text-lg mb-2">
           {episode.title}
         </h3>
-        <p className="text-sm text-zinc-600">
+
+        <p className="text-zinc-600 text-sm mb-4">
           {episode.description}
         </p>
+
+        {isPaid ? (
+          <button className="w-full rounded-xl bg-stone-800 hover:bg-stone-700 transition text-white py-2">
+            ▶️ Slušaj epizodu
+          </button>
+        ) : (
+          <p className="text-sm text-zinc-500 italic text-center">
+            Dostupno samo pretplaćenim korisnicima
+          </p>
+        )}
       </div>
     </div>
   );
 }
+
+

@@ -11,6 +11,7 @@ export default function SubscriptionPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const submit = async () => {
     setError("");
@@ -20,21 +21,34 @@ export default function SubscriptionPage() {
       return;
     }
 
-    // ⏳ Simulacija poziva backend-a
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    setLoading(true);
 
-    // Kasnije ovde ide:
-    // POST /api/subscription
+    try {
+      const res = await fetch("/api/subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ accountNumber }),
+      });
 
-    setSuccess(true);
+      if (!res.ok) {
+        setError("Greška pri pretplati");
+        return;
+      }
 
-    // Osveži user stanje (kasnije će role biti PAID)
-    await refresh();
+      setSuccess(true);
 
-    // Posle kratkog delay-a vrati na epizode
-    setTimeout(() => {
-      router.push("/app/episodes");
-    }, 1200);
+      // Osvežava auth state (korisnik dobija PAID ulogu)
+      await refresh();
+
+      // Posle kratkog delay-a vodi na serijale
+      setTimeout(() => {
+        router.push("/app/series");
+      }, 1200);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,17 +79,18 @@ export default function SubscriptionPage() {
 
             <button
               onClick={submit}
-              className="w-full rounded-xl bg-stone-800 hover:bg-stone-700 transition text-white py-3 font-medium"
+              disabled={loading}
+              className="w-full rounded-xl bg-stone-800 hover:bg-stone-700 transition text-white py-3 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Pretplati se
+              {loading ? "Obrada..." : "Pretplati se"}
             </button>
 
             <button
-  onClick={() => router.back()}
-  className="w-full mt-3 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-100 transition py-3 font-medium"
->
-  Odustani
-</button>
+              onClick={() => router.back()}
+              className="w-full mt-3 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-100 transition py-3 font-medium"
+            >
+              Odustani
+            </button>
           </>
         ) : (
           <div className="text-center">
@@ -83,7 +98,7 @@ export default function SubscriptionPage() {
               Uspešno ste se pretplatili!
             </p>
             <p className="text-zinc-600 text-sm">
-              Preusmeravamo vas na epizode...
+              Preusmeravamo vas na serijale...
             </p>
           </div>
         )}
