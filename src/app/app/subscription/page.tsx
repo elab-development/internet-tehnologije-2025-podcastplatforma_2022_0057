@@ -8,7 +8,10 @@ export default function SubscriptionPage() {
   const router = useRouter();
   const { refresh } = useAuth();
 
-  const [accountNumber, setAccountNumber] = useState("");
+  const [part1, setPart1] = useState("");
+  const [part2, setPart2] = useState("");
+  const [part3, setPart3] = useState("");
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,8 +19,11 @@ export default function SubscriptionPage() {
   const submit = async () => {
     setError("");
 
-    if (!accountNumber) {
-      setError("Molimo unesite broj računa");
+    const accountNumber = `${part1}-${part2}-${part3}`;
+    const accountRegex = /^\d{3}-\d{1,13}-\d{2}$/;
+
+    if (!accountRegex.test(accountNumber)) {
+      setError("Unesite ispravan format broja računa");
       return;
     }
 
@@ -64,12 +70,48 @@ export default function SubscriptionPage() {
 
         {!success ? (
           <>
-            <input
-              className="w-full rounded-xl border border-stone-300 px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-stone-400"
-              placeholder="Broj računa"
-              value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value)}
-            />
+            {/* BROJ RAČUNA */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={3}
+                placeholder="___"
+                className="w-20 text-center rounded-xl border border-stone-300 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
+                value={part1}
+                onChange={(e) =>
+                  setPart1(e.target.value.replace(/\D/g, ""))
+                }
+              />
+
+              <span className="self-center text-stone-500">-</span>
+
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={13}
+                placeholder="______"
+                className="flex-1 text-center rounded-xl border border-stone-300 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
+                value={part2}
+                onChange={(e) =>
+                  setPart2(e.target.value.replace(/\D/g, ""))
+                }
+              />
+
+              <span className="self-center text-stone-500">-</span>
+
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
+                placeholder="__"
+                className="w-16 text-center rounded-xl border border-stone-300 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
+                value={part3}
+                onChange={(e) =>
+                  setPart3(e.target.value.replace(/\D/g, ""))
+                }
+              />
+            </div>
 
             {error && (
               <p className="text-sm text-red-600 text-center mb-4">

@@ -1,37 +1,64 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 
 export default function PrivateNavbar() {
-  const { user, refresh } = useAuth();
   const router = useRouter();
-
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    await refresh();
-    router.push("/");
-  };
+  const { user, logout, refresh } = useAuth();
+  const [showSuccess, setShowSuccess] = useState(false);
 
   if (!user) return null;
 
   return (
-    <nav className="flex items-center justify-between px-8 py-4 bg-[#f4efe9] border-b border-stone-200">
-      <div className="text-lg">
-        Zdravo, <span className="font-semibold">{user.firstName} {user.lastName}</span>
-      </div>
+    <>
+      {showSuccess && (
+        <div className="bg-green-100 text-green-800 px-6 py-3 text-sm text-center">
+          Uspešno ste se odjavili sa pretplate.
+        </div>
+      )}
 
-      <div className="flex items-center gap-6">
-        <Link href="/app/subscription">Pretplata</Link>
+      <nav className="flex items-center justify-between px-8 py-4 border-b bg-white">
+        <p className="text-zinc-700 font-medium">
+          Zdravo, {user.firstName} {user.lastName}
+        </p>
 
-        <button
-          onClick={logout}
-          className="px-4 py-2 rounded-xl bg-stone-800 text-white hover:bg-stone-700"
-        >
-          Logout
-        </button>
-      </div>
-    </nav>
+        <div className="flex items-center gap-6">
+          <Link href="/app/series">Serijali</Link>
+
+          {user.role === "USER" && (
+            <Link href="/app/subscription">Pretplata</Link>
+          )}
+
+          {user.role === "PAID" && (
+            <button
+  onClick={async () => {
+    await fetch("/api/subscription/cancel", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    await refresh();        // role se vrati na USER
+    setShowSuccess(true);   // prikaži poruku
+
+    setTimeout(() => {
+      setShowSuccess(false); // sakrij poruku posle 10s
+    }, 5000);
+
+    router.push("/app/series");
+  }}
+  className="text-red-600 hover:text-red-700"
+>
+  Odustani od pretplate
+</button>
+          )}
+
+          <button onClick={logout}>Odjavi se</button>
+        </div>
+      </nav>
+    </>
   );
 }
+
