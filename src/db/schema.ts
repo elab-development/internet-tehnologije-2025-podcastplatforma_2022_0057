@@ -52,6 +52,7 @@ export const series = pgTable(
     description: text("description").notNull(),
     totalDurationSec: integer("total_duration_sec").notNull(),
     episodesCount: integer("episodes_count").notNull(),
+    imageUrlSer: text("imageUrlSer").notNull(), 
     typeId: text("type_id")
       .notNull()
       .references(() => seriesTypes.id, { onDelete: "restrict" }),
@@ -73,6 +74,7 @@ export const episodes = pgTable(
       .references(() => series.id, { onDelete: "cascade" }), 
     title: text("title").notNull(),
     durationSec: integer("duration_sec").notNull(),
+    imageUrlEp: text("imageUrlEp").notNull(), 
     mediaPath: text("media_path").notNull(), 
     orderIndex: integer("order_index"),
     createdAt: timestamp("created_at").notNull().defaultNow(),

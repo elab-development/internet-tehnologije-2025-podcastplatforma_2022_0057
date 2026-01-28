@@ -4,15 +4,13 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyAuthToken } from "@/lib/auth";
 import { db } from "@/db";
-import { users, episodes } from "@/db/schema";
+import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-// 🔒 PUT /api/episodes/:id – ADMIN
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
   if (!token) {
@@ -20,27 +18,26 @@ export async function PUT(
   }
 
   const claims = await verifyAuthToken(token);
-  const [user] = await db
+  const [admin] = await db
     .select()
     .from(users)
     .where(eq(users.id, claims.sub));
 
-  if (!user || user.role !== "ADMIN") {
+  if (!admin || admin.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const data = await req.json();
 
   const [updated] = await db
-    .update(episodes)
+    .update(users)
     .set(data)
-    .where(eq(episodes.id, params.id))
+    .where(eq(users.id, params.id))
     .returning();
 
   return NextResponse.json(updated);
 }
 
-// 🔒 DELETE /api/episodes/:id – ADMIN
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
@@ -52,16 +49,18 @@ export async function DELETE(
   }
 
   const claims = await verifyAuthToken(token);
-  const [user] = await db
+  const [admin] = await db
     .select()
     .from(users)
     .where(eq(users.id, claims.sub));
 
-  if (!user || user.role !== "ADMIN") {
+  if (!admin || admin.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await db.delete(episodes).where(eq(episodes.id, params.id));
+  await db.delete(users).where(eq(users.id, params.id));
 
   return NextResponse.json({ ok: true });
 }
+
+

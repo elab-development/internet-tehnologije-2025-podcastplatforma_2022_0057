@@ -20,8 +20,8 @@ async function main() {
  
   console.log("Kreiranje admina...");
   await db.insert(schema.users).values({
-    id: "admin_03",
-    email: "admin3@podcast.rs",
+    id: "admin_031",
+    email: "admin31@podcast.rs",
     firstName: "Glavni",
     lastName: "Administrator",
     passwordHash: hashedPw,
@@ -29,13 +29,13 @@ async function main() {
   });
 
   
-  const user1Id = "user_3";
-  const user2Id = "user_paid3";
+  const user1Id = "user_31";
+  const user2Id = "user_paid31";
 
   await db.insert(schema.users).values([
     {
       id: user1Id,
-      email: "petar3@gmail.com",
+      email: "petar31@gmail.com",
       firstName: "Petar",
       lastName: "Petrović",
       passwordHash: hashedPw,
@@ -43,7 +43,7 @@ async function main() {
     },
     {
       id: user2Id,
-      email: "marko3@gmail.com",
+      email: "marko31@gmail.com",
       firstName: "Marko",
       lastName: "Marković",
       passwordHash: hashedPw,
@@ -58,24 +58,26 @@ async function main() {
   });
 
   
-  const typeId = "type_edu3";
-  await db.insert(schema.seriesTypes).values({ id: typeId, name: "Edukacija3" });
+  const typeId = "type_edu31";
+  await db.insert(schema.seriesTypes).values({ id: typeId, name: "Edukacija31" });
 
-  const seriesId = "series_03";
+  const seriesId = "series_031";
   await db.insert(schema.series).values({
     id: seriesId,
     title: "IT Razgovori",
     description: "Podcast o modernim tehnologijama",
     typeId: typeId,
+    imageUrlSer: "/popularEpisodes/episode1.jpg",
     episodesCount: 1,
     totalDurationSec: 600,
   });
 
-  const epId = "ep_03";
+  const epId = "ep_031";
   await db.insert(schema.episodes).values({
     id: epId,
     seriesId: seriesId,
     title: "Uvod u Docker",
+    imageUrlEp: "/popularEpisodes/episode2.jpg",
     durationSec: 600,
     mediaPath: "/storage/ep1.mp3",
   });

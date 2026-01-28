@@ -4,11 +4,10 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyAuthToken } from "@/lib/auth";
 import { db } from "@/db";
-import { users, episodes } from "@/db/schema";
+import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-// 🔒 POST /api/episodes – samo ADMIN
-export async function POST(req: Request) {
+export async function GET() {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
   if (!token) {
@@ -16,22 +15,25 @@ export async function POST(req: Request) {
   }
 
   const claims = await verifyAuthToken(token);
-
-  const [user] = await db
+  const [admin] = await db
     .select()
     .from(users)
     .where(eq(users.id, claims.sub));
 
-  if (!user || user.role !== "ADMIN") {
+  if (!admin || admin.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const body = await req.json();
+  const data = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      role: users.role,
+      createdAt: users.createdAt,
+    })
+    .from(users);
 
-  const [created] = await db
-    .insert(episodes)
-    .values(body)
-    .returning();
-
-  return NextResponse.json(created);
+  return NextResponse.json(data);
 }

@@ -7,6 +7,7 @@ type Episode = {
   id: string;
   title: string;
   durationSec: number;
+  imageUrlEp: string | null;
 };
 
 export default function SeriesEpisodesPage() {
@@ -25,7 +26,6 @@ export default function SeriesEpisodesPage() {
       setForbidden(false);
 
       const res = await fetch(`/api/series/${id}/episodes`, {
-        // nije obavezno na istom domenu, ali ne smeta:
         credentials: "include",
       });
 
@@ -42,15 +42,13 @@ export default function SeriesEpisodesPage() {
       }
 
       if (!res.ok) {
-        const text = await res.text();
-        console.error("API error:", res.status, text);
+        console.error("API error:", res.status);
         setLoading(false);
         return;
       }
 
-      // bezbedno parsiranje
-      const text = await res.text();
-      setEpisodes(text ? (JSON.parse(text) as Episode[]) : []);
+      const data = (await res.json()) as Episode[];
+      setEpisodes(data);
       setLoading(false);
     };
 
@@ -65,7 +63,9 @@ export default function SeriesEpisodesPage() {
     return (
       <div className="p-10 text-center">
         <h2 className="text-xl font-semibold mb-3">Potrebna je pretplata</h2>
-        <p className="text-zinc-600 mb-6">Pretplatite se da biste videli epizode.</p>
+        <p className="text-zinc-600 mb-6">
+          Pretplatite se da biste videli epizode.
+        </p>
 
         <button
           onClick={() => router.push("/app/subscription")}
@@ -88,15 +88,28 @@ export default function SeriesEpisodesPage() {
           {episodes.map((ep) => (
             <div
               key={ep.id}
-              className="rounded-xl bg-white shadow p-5 flex justify-between items-center"
+              className="rounded-2xl bg-white shadow p-5 flex gap-5 items-center"
             >
-              <div>
+              {/* SLIKA EPIZODE */}
+              {ep.imageUrlEp ? (
+                <img
+                  src={ep.imageUrlEp}
+                  alt={ep.title}
+                  className="w-28 h-20 rounded-xl object-cover bg-stone-200"
+                />
+              ) : (
+                <div className="w-28 h-20 rounded-xl bg-stone-200" />
+              )}
+
+              {/* INFO */}
+              <div className="flex-1">
                 <div className="font-medium">{ep.title}</div>
                 <div className="text-sm text-zinc-600">
                   Trajanje: {ep.durationSec}s
                 </div>
               </div>
 
+              {/* AKCIJA */}
               <button className="rounded-xl bg-stone-800 text-white px-4 py-2">
                 ▶️ Slušaj
               </button>
@@ -107,4 +120,3 @@ export default function SeriesEpisodesPage() {
     </section>
   );
 }
-

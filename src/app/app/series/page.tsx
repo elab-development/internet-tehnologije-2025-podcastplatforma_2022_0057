@@ -24,7 +24,12 @@ export default function SeriesPage() {
             onClick={() => router.push(`/app/series/${s.id}`)}
             className="cursor-pointer rounded-2xl bg-white shadow hover:shadow-lg transition p-5"
           >
-            <div className="h-40 bg-stone-200 rounded-xl mb-4" />
+            <img
+              src={s.imageUrlSer || "/placeholder.jpg"}
+              alt={s.title}
+              className="h-40 w-full object-cover rounded-xl mb-4"
+            />
+
             <h2 className="text-lg font-semibold mb-2">{s.title}</h2>
             <p className="text-zinc-600 text-sm">{s.description}</p>
           </div>
@@ -33,4 +38,3 @@ export default function SeriesPage() {
     </section>
   );
 }
-

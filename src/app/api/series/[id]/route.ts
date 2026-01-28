@@ -7,15 +7,26 @@ import { db } from "@/db";
 import { users, series } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+// 🔒 PUT /api/series/:id – ADMIN
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const token = (await cookies()).get("auth")?.value;
-  const claims = await verifyAuthToken(token!);
+   const cookieStore = await cookies();
+  const token = cookieStore.get("auth")?.value;
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const [user] = await db.select().from(users).where(eq(users.id, claims.sub));
-  if (user.role !== "ADMIN") return NextResponse.json({}, { status: 403 });
+  const claims = await verifyAuthToken(token);
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, claims.sub));
+
+  if (!user || user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const data = await req.json();
 
@@ -27,16 +38,29 @@ export async function PUT(
 
   return NextResponse.json(updated);
 }
+
+// 🔒 DELETE /api/series/:id – ADMIN
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const token = (await cookies()).get("auth")?.value;
-  const claims = await verifyAuthToken(token!);
+  const cookieStore = await cookies();
+  const token = cookieStore.get("auth")?.value;
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const [user] = await db.select().from(users).where(eq(users.id, claims.sub));
-  if (user.role !== "ADMIN") return NextResponse.json({}, { status: 403 });
+  const claims = await verifyAuthToken(token);
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, claims.sub));
+
+  if (!user || user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   await db.delete(series).where(eq(series.id, params.id));
+
   return NextResponse.json({ ok: true });
 }
