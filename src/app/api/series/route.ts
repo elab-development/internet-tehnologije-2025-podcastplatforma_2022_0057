@@ -6,6 +6,8 @@ import { verifyAuthToken } from "@/lib/auth";
 import { db } from "@/db";
 import { users, series } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
+
 
 // 🔓 GET /api/series – svi mogu da vide serijale
 export async function GET() {
@@ -15,9 +17,7 @@ export async function GET() {
 
 // 🔒 POST /api/series – samo ADMIN
 export async function POST(req: Request) {
-
- const cookieStore = await cookies();
-  const token = cookieStore.get("auth")?.value;
+  const token = (await cookies()).get("auth")?.value;
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -32,8 +32,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const body = await req.json();
-  const [created] = await db.insert(series).values(body).returning();
+  const {
+    title,
+    description,
+    imageUrlSer,
+    typeId,
+  } = await req.json();
+
+  const [created] = await db.insert(series).values({
+    id: randomUUID(),
+    title,
+    description,
+    imageUrlSer,
+    typeId,
+    totalDurationSec: 0,
+    episodesCount: 0,
+  }).returning();
 
   return NextResponse.json(created);
 }
+

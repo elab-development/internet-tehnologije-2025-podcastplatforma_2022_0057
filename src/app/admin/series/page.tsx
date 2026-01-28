@@ -16,6 +16,7 @@ type SeriesType = {
 export default function AdminSeriesPage() {
   const [items, setItems] = useState<Series[]>([]);
   const [types, setTypes] = useState<SeriesType[]>([]);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrlSer, setImageUrlSer] = useState("");
@@ -33,6 +34,11 @@ export default function AdminSeriesPage() {
   }, []);
 
   const submit = async () => {
+    if (!title || !description || !typeId || !imageUrlSer) {
+      alert("Popunite sva polja");
+      return;
+    }
+
     await fetch("/api/series", {
       method: "POST",
       credentials: "include",
@@ -46,6 +52,7 @@ export default function AdminSeriesPage() {
         episodesCount: 0,
       }),
     });
+
     setTitle("");
     setDescription("");
     setImageUrlSer("");
@@ -70,14 +77,14 @@ export default function AdminSeriesPage() {
       <div className="bg-white p-6 rounded-2xl shadow space-y-4 max-w-xl">
         <input
           className="w-full rounded-xl border px-4 py-3"
-          placeholder="Naziv"
+          placeholder="Naziv serijala"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
 
         <textarea
           className="w-full rounded-xl border px-4 py-3"
-          placeholder="Opis"
+          placeholder="Opis serijala"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
@@ -95,12 +102,17 @@ export default function AdminSeriesPage() {
           onChange={(e) => setTypeId(e.target.value)}
         >
           <option value="">Izaberite tip serijala</option>
-          {types.map(t => (
-            <option key={t.id} value={t.id}>{t.name}</option>
+          {types.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
           ))}
         </select>
 
-        <button onClick={submit} className="w-full rounded-xl bg-stone-800 text-white py-3">
+        <button
+          onClick={submit}
+          className="w-full rounded-xl bg-stone-800 text-white py-3"
+        >
           Sačuvaj
         </button>
       </div>
@@ -115,12 +127,15 @@ export default function AdminSeriesPage() {
           </tr>
         </thead>
         <tbody>
-          {items.map(s => (
+          {items.map((s) => (
             <tr key={s.id} className="border-b">
               <td className="p-4">{s.title}</td>
               <td className="p-4 text-sm text-zinc-600">{s.description}</td>
               <td className="p-4 text-center">
-                <button onClick={() => remove(s.id)} className="text-red-600 hover:underline">
+                <button
+                  onClick={() => remove(s.id)}
+                  className="text-red-600 hover:underline"
+                >
                   Obriši
                 </button>
               </td>

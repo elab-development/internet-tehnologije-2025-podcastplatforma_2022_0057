@@ -42,15 +42,19 @@ export async function PUT(
 // 🔒 DELETE /api/series/:id – ADMIN
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth")?.value;
+  // 🔑 1. await params
+  const { id } = await context.params;
+
+  // 🔐 auth
+  const token = (await cookies()).get("auth")?.value;
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const claims = await verifyAuthToken(token);
+
   const [user] = await db
     .select()
     .from(users)
@@ -60,7 +64,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await db.delete(series).where(eq(series.id, params.id));
+  // 🗑️ delete
+  await db.delete(series).where(eq(series.id, id));
 
   return NextResponse.json({ ok: true });
 }
+
