@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyAuthToken } from "@/lib/auth";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, paidProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET() {
@@ -24,6 +24,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // 👇 LEFT JOIN users + paid_profiles
   const data = await db
     .select({
       id: users.id,
@@ -32,8 +33,13 @@ export async function GET() {
       lastName: users.lastName,
       role: users.role,
       createdAt: users.createdAt,
+      accountNumber: paidProfiles.accountNumber,
     })
-    .from(users);
+    .from(users)
+    .leftJoin(
+      paidProfiles,
+      eq(users.id, paidProfiles.userId)
+    );
 
   return NextResponse.json(data);
 }

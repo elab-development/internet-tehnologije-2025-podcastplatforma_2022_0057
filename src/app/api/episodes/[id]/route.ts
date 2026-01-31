@@ -4,47 +4,16 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyAuthToken } from "@/lib/auth";
 import { db } from "@/db";
-import { users, episodes } from "@/db/schema";
-import { eq } from "drizzle-orm";
-
-// 🔒 PUT /api/episodes/:id – ADMIN
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth")?.value;
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const claims = await verifyAuthToken(token);
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, claims.sub));
-
-  if (!user || user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const data = await req.json();
-
-  const [updated] = await db
-    .update(episodes)
-    .set(data)
-    .where(eq(episodes.id, params.id))
-    .returning();
-
-  return NextResponse.json(updated);
-}
+import { users, episodes, series } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
 
 // 🔒 DELETE /api/episodes/:id – ADMIN
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params; // ✅ OVO JE KLJUČ
+
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
   if (!token) {
@@ -61,7 +30,37 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await db.delete(episodes).where(eq(episodes.id, params.id));
+  // 1️⃣ pronađi epizodu
+  const [episode] = await db
+    .select()
+    .from(episodes)
+    .where(eq(episodes.id, id));
+
+  if (!episode) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // 2️⃣ obriši epizodu
+  await db.delete(episodes).where(eq(episodes.id, id));
+
+  // 3️⃣ nova statistika
+  const stats = await db
+    .select({
+      count: sql<number>`count(*)`,
+      total: sql<number>`coalesce(sum(${episodes.durationSec}), 0)`,
+    })
+    .from(episodes)
+    .where(eq(episodes.seriesId, episode.seriesId));
+
+  // 4️⃣ update series
+  await db
+    .update(series)
+    .set({
+      episodesCount: stats[0].count,
+      totalDurationSec: stats[0].total,
+      updatedAt: new Date(),
+    })
+    .where(eq(series.id, episode.seriesId));
 
   return NextResponse.json({ ok: true });
 }

@@ -4,8 +4,9 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyAuthToken } from "@/lib/auth";
 import { db } from "@/db";
-import { users, episodes } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { users, episodes, series } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
 
 // 🔒 POST /api/episodes – samo ADMIN
 export async function POST(req: Request) {
@@ -16,7 +17,6 @@ export async function POST(req: Request) {
   }
 
   const claims = await verifyAuthToken(token);
-
   const [user] = await db
     .select()
     .from(users)
@@ -28,10 +28,39 @@ export async function POST(req: Request) {
 
   const body = await req.json();
 
+  // 1️⃣ insert epizode
   const [created] = await db
     .insert(episodes)
-    .values(body)
+    .values({
+      id: randomUUID(),
+      ...body,
+    })
     .returning();
 
+  // 2️⃣ izračunaj statistiku
+  const stats = await db
+    .select({
+      count: sql<number>`count(*)`,
+      total: sql<number>`coalesce(sum(${episodes.durationSec}), 0)`,
+    })
+    .from(episodes)
+    .where(eq(episodes.seriesId, body.seriesId));
+
+  // 3️⃣ update series
+  await db
+    .update(series)
+    .set({
+      episodesCount: stats[0].count,
+      totalDurationSec: stats[0].total,
+      updatedAt: new Date(),
+    })
+    .where(eq(series.id, body.seriesId));
+
   return NextResponse.json(created);
+}
+
+// 📥 GET /api/episodes
+export async function GET() {
+  const data = await db.select().from(episodes);
+  return NextResponse.json(data);
 }

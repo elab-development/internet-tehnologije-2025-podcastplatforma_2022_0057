@@ -7,7 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { refresh, user } = useAuth();
+  const { refresh } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,17 +29,18 @@ export default function LoginPage() {
       return;
     }
 
-    // 🔁 osveži auth kontekst (učita user + role)
+    // ⬇️ UZIMAMO ROLE DIREKTNO IZ API-JA
+    const data = await res.json();
+
+    // osveži auth context za ostatak aplikacije
     await refresh();
 
-    // ⏳ mali delay da se user sigurno ažurira
-    setTimeout(() => {
-      if (user?.role === "ADMIN") {
-        router.push("/admin/series");
-      } else {
-        router.push("/app/series");
-      }
-    }, 100);
+    // 🔥 SIGURAN REDIRECT
+    if (data.role === "ADMIN") {
+      router.push("/admin/series");
+    } else {
+      router.push("/app/series");
+    }
   };
 
   return (
@@ -68,7 +69,9 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
 
-            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+            {error && (
+              <p className="text-sm text-red-600 text-center">{error}</p>
+            )}
 
             <button
               onClick={submit}
