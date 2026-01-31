@@ -3,37 +3,127 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type SeriesType = {
+  id: string;
+  name: string;
+};
+
 export default function SeriesPage() {
   const [items, setItems] = useState<any[]>([]);
+  const [types, setTypes] = useState<SeriesType[]>([]);
+  const [query, setQuery] = useState("");
+  const [type, setType] = useState("");
+  const [page, setPage] = useState(1);
+
+  const limit = 6;
   const router = useRouter();
 
+  // 🔹 učitaj tipove serijala
   useEffect(() => {
-    fetch("/api/series")
+    fetch("/api/series-types")
       .then((r) => r.json())
-      .then(setItems);
+      .then(setTypes);
   }, []);
 
+  // 🔹 učitaj serijale (pretraga + filter + paginacija)
+  useEffect(() => {
+    const params = new URLSearchParams({
+      q: query,
+      type,
+      page: String(page),
+      limit: String(limit),
+    });
+
+    fetch(`/api/series?${params.toString()}`)
+      .then((r) => r.json())
+      .then(setItems);
+  }, [query, type, page]);
+
   return (
-    <section className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Podcast serijali</h1>
+    <section className="min-h-screen bg-[#f6f1eb] px-6 py-10">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-serif font-bold mb-8">
+          Podcast serijali
+        </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {items.map((s) => (
-          <div
-            key={s.id}
-            onClick={() => router.push(`/app/series/${s.id}`)}
-            className="cursor-pointer rounded-2xl bg-white shadow hover:shadow-lg transition p-5"
+        {/* 🔍 PRETRAGA + FILTER */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-10">
+          <input
+            placeholder="Pretraga po nazivu..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
+            className="border px-4 py-2 rounded-xl w-full sm:w-1/2"
+          />
+
+          <select
+            value={type}
+            onChange={(e) => {
+              setType(e.target.value);
+              setPage(1);
+            }}
+            className="border px-4 py-2 rounded-xl w-full sm:w-1/4"
           >
-            <img
-              src={s.imageUrlSer || "/placeholder.jpg"}
-              alt={s.title}
-              className="h-40 w-full object-cover rounded-xl mb-4"
-            />
+            <option value="">Svi tipovi</option>
+            {types.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <h2 className="text-lg font-semibold mb-2">{s.title}</h2>
-            <p className="text-zinc-600 text-sm">{s.description}</p>
-          </div>
-        ))}
+        {/* 📦 SERIJALI */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {items.map((s) => (
+            <div
+              key={s.id}
+              onClick={() => router.push(`/app/series/${s.id}`)}
+              className="cursor-pointer bg-[#fffaf4] rounded-3xl p-6 shadow hover:shadow-lg transition"
+            >
+              <img
+                src={s.imageUrlSer}
+                className="h-40 w-full object-cover rounded-xl mb-4"
+              />
+
+              <p className="text-xs uppercase text-[#8b6b4f] mb-1">
+                {s.typeName}
+              </p>
+
+              <h2 className="text-xl font-serif font-semibold">
+                {s.title}
+              </h2>
+
+              <p className="text-sm text-[#5c4a3d] mt-2">
+                {s.description}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* 📄 PAGINACIJA */}
+        <div className="flex justify-center gap-4 mt-12">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="px-4 py-2 rounded-xl bg-stone-200 disabled:opacity-50"
+          >
+            Prethodna
+          </button>
+
+          <span className="px-4 py-2 font-medium">
+             {page}
+          </span>
+
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            className="px-4 py-2 rounded-xl bg-stone-200"
+          >
+            Sledeća
+          </button>
+        </div>
       </div>
     </section>
   );

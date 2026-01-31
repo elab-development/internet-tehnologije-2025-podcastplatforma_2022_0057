@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "series_types_name_uq" ON "series_types" USING btree ("name");

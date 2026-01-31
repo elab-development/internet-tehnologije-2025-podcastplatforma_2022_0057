@@ -33,12 +33,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   };
 
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    setUser(null);
-    router.push("/");
-    router.refresh();
-  };
+ const logout = async () => {
+  await fetch("/api/auth/logout", { method: "POST" });
+  setUser(null);
+  window.location.href = "/";
+};
+
 
   useEffect(() => {
     refresh();

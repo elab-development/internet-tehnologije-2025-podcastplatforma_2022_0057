@@ -39,10 +39,16 @@ export const paidProfiles = pgTable("paid_profiles", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const seriesTypes = pgTable("series_types", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-});
+export const seriesTypes = pgTable(
+  "series_types",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+  },
+  (t) => ({
+    nameUq: uniqueIndex("series_types_name_uq").on(t.name),
+  })
+);
 
 export const series = pgTable(
   "series",

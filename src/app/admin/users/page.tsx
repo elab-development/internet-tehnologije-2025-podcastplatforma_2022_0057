@@ -13,14 +13,19 @@ type User = {
   accountNumber?: string | null;
 };
 
+const PAGE_SIZE = 5; // 👈 koliko korisnika po strani
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [query, setQuery] = useState("");
 
-  // 👇 stanje za edit
+  // 👇 edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<Role>("USER");
   const [editAccountNumber, setEditAccountNumber] = useState("");
+
+  // 👇 pagination state
+  const [currentPage, setCurrentPage] = useState(1);
 
   const load = async () => {
     const res = await fetch("/api/users", { credentials: "include" });
@@ -67,11 +72,25 @@ export default function AdminUsersPage() {
     load();
   };
 
+  // 🔍 filtriranje
   const filtered = users.filter(
     (u) =>
       u.email.toLowerCase().includes(query.toLowerCase()) ||
       u.lastName.toLowerCase().includes(query.toLowerCase())
   );
+
+  // 📄 pagination logika
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const paginatedUsers = filtered.slice(
+    startIndex,
+    startIndex + PAGE_SIZE
+  );
+
+  // reset na prvu stranu kad se menja pretraga
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query]);
 
   return (
     <section className="space-y-6">
@@ -94,7 +113,7 @@ export default function AdminUsersPage() {
           </tr>
         </thead>
         <tbody>
-          {filtered.map((u) => {
+          {paginatedUsers.map((u) => {
             const isEditing = editingId === u.id;
 
             return (
@@ -120,7 +139,6 @@ export default function AdminUsersPage() {
                         <option value="ADMIN">ADMIN</option>
                       </select>
 
-                      {/* 👇 POLJE SAMO TOKOM IZMENE */}
                       {editRole === "PAID" && (
                         <input
                           className="border rounded px-2 py-1 w-full"
@@ -175,6 +193,41 @@ export default function AdminUsersPage() {
           })}
         </tbody>
       </table>
+
+      {/* 📄 PAGINACIJA */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 pt-4">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+            className="px-3 py-1 rounded border disabled:opacity-40"
+          >
+            Prethodna
+          </button>
+
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 rounded border ${
+                currentPage === i + 1
+                  ? "bg-stone-800 text-white"
+                  : ""
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className="px-3 py-1 rounded border disabled:opacity-40"
+          >
+            Sledeća
+          </button>
+        </div>
+      )}
     </section>
   );
 }
