@@ -8,8 +8,18 @@ type SeriesType = {
   name: string;
 };
 
+type Series = {
+  id: string;
+  title: string;
+  description: string;
+  imageUrlSer: string;
+  totalDurationSec: number;
+  episodesCount: number;
+  typeName: string;
+};
+
 export default function SeriesPage() {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<Series[]>([]);
   const [types, setTypes] = useState<SeriesType[]>([]);
   const [query, setQuery] = useState("");
   const [type, setType] = useState("");
@@ -81,24 +91,33 @@ export default function SeriesPage() {
             <div
               key={s.id}
               onClick={() => router.push(`/app/series/${s.id}`)}
-              className="cursor-pointer bg-[#fffaf4] rounded-3xl p-6 shadow hover:shadow-lg transition"
+              className="cursor-pointer bg-[#fffaf4] rounded-3xl p-6 shadow hover:shadow-lg transition border border-[#e7ded4]"
             >
               <img
-                src={s.imageUrlSer}
+                src={s.imageUrlSer || "/placeholder.jpg"}
                 className="h-40 w-full object-cover rounded-xl mb-4"
               />
 
+              {/* TIP */}
               <p className="text-xs uppercase text-[#8b6b4f] mb-1">
                 {s.typeName}
               </p>
 
-              <h2 className="text-xl font-serif font-semibold">
+              {/* NAZIV */}
+              <h2 className="text-xl font-serif font-semibold text-[#3f2d22] mb-2">
                 {s.title}
               </h2>
 
-              <p className="text-sm text-[#5c4a3d] mt-2">
+              {/* OPIS */}
+              <p className="text-sm text-[#5c4a3d] mb-4 line-clamp-3">
                 {s.description}
               </p>
+
+              {/* META PODACI */}
+              <div className="flex justify-between text-xs text-[#6b5848] border-t pt-3">
+                <span>🎧Broj epizoda: {s.episodesCount} </span>
+                <span>⏱ {s.totalDurationSec} sekundi</span>
+              </div>
             </div>
           ))}
         </div>
@@ -114,7 +133,7 @@ export default function SeriesPage() {
           </button>
 
           <span className="px-4 py-2 font-medium">
-             {page}
+            {page}
           </span>
 
           <button
