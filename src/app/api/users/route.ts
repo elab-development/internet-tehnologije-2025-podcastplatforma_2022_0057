@@ -24,7 +24,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // 👇 LEFT JOIN users + paid_profiles
+  
   const data = await db
     .select({
       id: users.id,

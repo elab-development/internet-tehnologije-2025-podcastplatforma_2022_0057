@@ -10,7 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* samo USER i PAID */}
+      
       {user?.role !== "ADMIN" && <PrivateNavbar />}
       <main>{children}</main>
     </>

@@ -28,14 +28,14 @@ export default function SeriesPage() {
   const limit = 6;
   const router = useRouter();
 
-  // 🔹 učitaj tipove serijala
+  
   useEffect(() => {
     fetch("/api/series-types")
       .then((r) => r.json())
       .then(setTypes);
   }, []);
 
-  // 🔹 učitaj serijale (pretraga + filter + paginacija)
+  
   useEffect(() => {
     const params = new URLSearchParams({
       q: query,
@@ -56,7 +56,7 @@ export default function SeriesPage() {
           Podcast serijali
         </h1>
 
-        {/* 🔍 PRETRAGA + FILTER */}
+        
         <div className="flex flex-col sm:flex-row gap-4 mb-10">
           <input
             placeholder="Pretraga po nazivu..."
@@ -85,7 +85,7 @@ export default function SeriesPage() {
           </select>
         </div>
 
-        {/* 📦 SERIJALI */}
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {items.map((s) => (
             <div
@@ -98,22 +98,22 @@ export default function SeriesPage() {
                 className="h-40 w-full object-cover rounded-xl mb-4"
               />
 
-              {/* TIP */}
+              
               <p className="text-xs uppercase text-[#8b6b4f] mb-1">
                 {s.typeName}
               </p>
 
-              {/* NAZIV */}
+              
               <h2 className="text-xl font-serif font-semibold text-[#3f2d22] mb-2">
                 {s.title}
               </h2>
 
-              {/* OPIS */}
+              
               <p className="text-sm text-[#5c4a3d] mb-4 line-clamp-3">
                 {s.description}
               </p>
 
-              {/* META PODACI */}
+              
               <div className="flex justify-between text-xs text-[#6b5848] border-t pt-3">
                 <span>🎧Broj epizoda: {s.episodesCount} </span>
                 <span>⏱ {s.totalDurationSec} sekundi</span>
@@ -122,7 +122,7 @@ export default function SeriesPage() {
           ))}
         </div>
 
-        {/* 📄 PAGINACIJA */}
+        
         <div className="flex justify-center gap-4 mt-12">
           <button
             disabled={page === 1}

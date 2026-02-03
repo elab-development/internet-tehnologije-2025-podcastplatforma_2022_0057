@@ -29,13 +29,12 @@ export default function LoginPage() {
       return;
     }
 
-    // ⬇️ UZIMAMO ROLE DIREKTNO IZ API-JA
+   
     const data = await res.json();
 
-    // osveži auth context za ostatak aplikacije
+    
     await refresh();
 
-    // 🔥 SIGURAN REDIRECT
     if (data.role === "ADMIN") {
       router.push("/admin/series");
     } else {

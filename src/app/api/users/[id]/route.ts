@@ -7,9 +7,7 @@ import { db } from "@/db";
 import { users, paidProfiles, listenProgress } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-/* =========================
-   PUT – promena uloge
-========================= */
+
 export async function PUT(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -34,10 +32,10 @@ export async function PUT(
 
   const { role, accountNumber } = await req.json();
 
-  // 1️⃣ ažuriraj ulogu
+  
   await db.update(users).set({ role }).where(eq(users.id, id));
 
-  // 2️⃣ sync paid_profiles
+  
   if (role === "PAID") {
     if (!accountNumber) {
       return NextResponse.json(
@@ -60,9 +58,7 @@ export async function PUT(
   return NextResponse.json({ ok: true });
 }
 
-/* =========================
-   DELETE – brisanje korisnika
-========================= */
+
 export async function DELETE(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -85,7 +81,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // ❌ admin ne može obrisati samog sebe
+  
   if (admin.id === id) {
     return NextResponse.json(
       { error: "Ne možete obrisati sopstveni nalog" },
@@ -93,11 +89,11 @@ export async function DELETE(
     );
   }
 
-  // 🧹 obriši zavisne podatke
+
   await db.delete(listenProgress).where(eq(listenProgress.userId, id));
   await db.delete(paidProfiles).where(eq(paidProfiles.userId, id));
 
-  // 🗑 obriši korisnika
+
   await db.delete(users).where(eq(users.id, id));
 
   return NextResponse.json({ ok: true });

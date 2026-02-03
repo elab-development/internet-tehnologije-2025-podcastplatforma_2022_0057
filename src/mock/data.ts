@@ -1,44 +1,26 @@
-export const series = [
-  {
-    id: "s1",
-    title: "Tehnologija danas",
-    description: "Podcast o savremenim tehnologijama",
-  },
-  {
-    id: "s2",
-    title: "Digitalni marketing",
-    description: "Saveti i strategije digitalnog marketinga",
-  },
-  {
-    id: "s3",
-    title: "UX i dizajn",
-    description: "Razgovori o dizajnu i korisničkom iskustvu",
-  },
-];
-
 export const episodes = [
   {
     id: "e1",
-    seriesId: "s1",
-    title: "Podcast 064: Jovan Memedović",
-    duration: 45,
-    image:"/popularEpisodes/episode1.jpg",
+    seriesId: "ad93361c-891c-43f7-8afe-89c0ed2af559",
+    title: "Put do profesionalnog sportiste",
+    duration: 652,
+    image:"/popularEpisodes/profesionalniSportista.jpg",
 
   },
   {
     id: "e2",
-    seriesId: "s1",
-    title: "Podcast 049: Miloš Milaković",
-    duration: 38,
-    image:"/popularEpisodes/episode2.jpg",
+    seriesId: "b140d32e-a11e-499c-bc82-d4c43ab6eeef",
+    title: "Moc navika u svakodnevnom zivotu",
+    duration: 623,
+    image:"/popularEpisodes/mocNavika.jpg",
 
   },
   {
     id: "e3",
-    seriesId: "s2",
-    title: "Podcast 139: Ivan Ivanović",
-    duration: 30,
-    image:"/popularEpisodes/episode3.jpg",
+    seriesId: "8cd903c1-eba7-49a3-b275-9a7d1c16b13b",
+    title: "Kako uciti efikasnije",
+    duration: 675,
+    image:"/popularEpisodes/efikasnoUcenje.jpg",
 
   },
   

@@ -90,7 +90,7 @@ export default function SeriesEpisodesPage() {
               key={ep.id}
               className="rounded-2xl bg-white shadow p-5 flex gap-5 items-center"
             >
-              {/* SLIKA EPIZODE */}
+              
               {ep.imageUrlEp ? (
                 <img
                   src={ep.imageUrlEp}
@@ -101,7 +101,7 @@ export default function SeriesEpisodesPage() {
                 <div className="w-28 h-20 rounded-xl bg-stone-200" />
               )}
 
-              {/* INFO */}
+             
               <div className="flex-1">
                 <div className="font-medium">{ep.title}</div>
                 <div className="text-sm text-zinc-600">
@@ -109,7 +109,7 @@ export default function SeriesEpisodesPage() {
                 </div>
               </div>
 
-              {/* AKCIJA */}
+              
               <button className="rounded-xl bg-stone-800 text-white px-4 py-2">
                 ▶️ Slušaj
               </button>

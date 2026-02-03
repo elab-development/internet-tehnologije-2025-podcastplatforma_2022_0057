@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { users, series } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-// 🔒 PUT /api/series/:id – ADMIN
+
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
@@ -39,15 +39,15 @@ export async function PUT(
   return NextResponse.json(updated);
 }
 
-// 🔒 DELETE /api/series/:id – ADMIN
+
 export async function DELETE(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  // 🔑 1. await params
+  
   const { id } = await context.params;
 
-  // 🔐 auth
+  
   const token = (await cookies()).get("auth")?.value;
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -64,7 +64,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // 🗑️ delete
+  
   await db.delete(series).where(eq(series.id, id));
 
   return NextResponse.json({ ok: true });

@@ -64,7 +64,7 @@ export default function AdminEpisodesPage() {
     <section className="space-y-12">
       <h1 className="text-2xl font-bold">Upravljanje epizodama</h1>
 
-      {/* ➕ FORMA */}
+      
       <div className="bg-white p-6 rounded-2xl shadow space-y-4 max-w-xl">
         <select
           className="w-full rounded-xl border px-4 py-3"
@@ -111,7 +111,6 @@ export default function AdminEpisodesPage() {
         </button>
       </div>
 
-      {/* 📋 TABELA */}
       <table className="w-full bg-white rounded-xl shadow">
         <thead>
           <tr className="border-b">

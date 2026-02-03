@@ -45,10 +45,10 @@ export default function SubscriptionPage() {
 
       setSuccess(true);
 
-      // Osvežava auth state (korisnik dobija PAID ulogu)
+      
       await refresh();
 
-      // Posle kratkog delay-a vodi na serijale
+      
       setTimeout(() => {
         router.push("/app/series");
       }, 1200);
@@ -70,7 +70,7 @@ export default function SubscriptionPage() {
 
         {!success ? (
           <>
-            {/* BROJ RAČUNA */}
+            
             <div className="flex gap-2 mb-4">
               <input
                 type="text"

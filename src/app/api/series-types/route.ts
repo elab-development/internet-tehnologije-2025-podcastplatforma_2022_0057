@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { seriesTypes } from "@/db/schema";
 
-// 🔓 GET /api/series-types – lista tipova serijala
+
 export async function GET() {
   const data = await db
     .select({
@@ -12,7 +12,7 @@ export async function GET() {
       name: seriesTypes.name,
     })
     .from(seriesTypes)
-    .orderBy(seriesTypes.name); // 🔤 abecedno
+    .orderBy(seriesTypes.name); 
 
   return NextResponse.json(data);
 }

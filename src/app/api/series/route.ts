@@ -8,15 +8,7 @@ import { users, series, seriesTypes } from "@/db/schema";
 import { eq, ilike, and, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
-/* =========================
-   🔓 GET /api/series
-   Pretraga + filter + paginacija
-   Query params:
-   - q     (string)  naziv serijala
-   - type  (string)  typeId
-   - page  (number)
-   - limit (number)
-========================= */
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
 
@@ -26,7 +18,7 @@ export async function GET(req: Request) {
   const limit = Number(searchParams.get("limit") ?? 6);
   const offset = (page - 1) * limit;
 
-  // uslovi
+  
   const conditions = [];
 
   if (q) {
@@ -50,16 +42,14 @@ export async function GET(req: Request) {
     .from(series)
     .leftJoin(seriesTypes, eq(series.typeId, seriesTypes.id))
     .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(series.title) // 🔤 abecedno
+    .orderBy(series.title) 
     .limit(limit)
     .offset(offset);
 
   return NextResponse.json(data);
 }
 
-/* =========================
-   🔒 POST /api/series – ADMIN
-========================= */
+
 export async function POST(req: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;

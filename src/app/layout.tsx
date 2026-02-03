@@ -28,12 +28,12 @@ export default function RootLayout({
     <html lang="sr">
       <body className="min-h-screen flex flex-col bg-[#f4efe9] text-[#3f2d22]">
         <AuthProvider>
-          {/* 👇 SAV SADRŽAJ */}
+          
           <main className="flex-1">
             {children}
           </main>
 
-          {/* 👇 FOOTER UVEK NA DNU */}
+        
           <Footer />
         </AuthProvider>
       </body>

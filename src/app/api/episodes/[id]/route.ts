@@ -7,12 +7,12 @@ import { db } from "@/db";
 import { users, episodes, series } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 
-// 🔒 DELETE /api/episodes/:id – ADMIN
+
 export async function DELETE(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params; // ✅ OVO JE KLJUČ
+  const { id } = await context.params; 
 
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
@@ -30,7 +30,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // 1️⃣ pronađi epizodu
   const [episode] = await db
     .select()
     .from(episodes)
@@ -40,10 +39,10 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // 2️⃣ obriši epizodu
+  
   await db.delete(episodes).where(eq(episodes.id, id));
 
-  // 3️⃣ nova statistika
+  
   const stats = await db
     .select({
       count: sql<number>`count(*)`,
@@ -52,7 +51,7 @@ export async function DELETE(
     .from(episodes)
     .where(eq(episodes.seriesId, episode.seriesId));
 
-  // 4️⃣ update series
+ 
   await db
     .update(series)
     .set({

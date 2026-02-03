@@ -13,18 +13,17 @@ type User = {
   accountNumber?: string | null;
 };
 
-const PAGE_SIZE = 5; // 👈 koliko korisnika po strani
+const PAGE_SIZE = 5; 
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [query, setQuery] = useState("");
 
-  // 👇 edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<Role>("USER");
   const [editAccountNumber, setEditAccountNumber] = useState("");
 
-  // 👇 pagination state
+  
   const [currentPage, setCurrentPage] = useState(1);
 
   const load = async () => {
@@ -72,14 +71,14 @@ export default function AdminUsersPage() {
     load();
   };
 
-  // 🔍 filtriranje
+  
   const filtered = users.filter(
     (u) =>
       u.email.toLowerCase().includes(query.toLowerCase()) ||
       u.lastName.toLowerCase().includes(query.toLowerCase())
   );
 
-  // 📄 pagination logika
+
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const paginatedUsers = filtered.slice(
@@ -87,7 +86,6 @@ export default function AdminUsersPage() {
     startIndex + PAGE_SIZE
   );
 
-  // reset na prvu stranu kad se menja pretraga
   useEffect(() => {
     setCurrentPage(1);
   }, [query]);
@@ -98,7 +96,7 @@ export default function AdminUsersPage() {
 
       <input
         className="border px-4 py-2 rounded-xl w-full max-w-md"
-        placeholder="Pretraga (email ili prezime)"
+        placeholder="Pretraga (email, ime ili prezime)"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
@@ -194,7 +192,7 @@ export default function AdminUsersPage() {
         </tbody>
       </table>
 
-      {/* 📄 PAGINACIJA */}
+      
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2 pt-4">
           <button

@@ -8,10 +8,10 @@ const key = new TextEncoder().encode(JWT_SECRET);
 export type JwtUserClaims = {
   sub: string;
   email: string;
-  name?: string; // ovde smestimo "First Last"
+  name?: string; 
 };
 
-const EXPIRES_SECONDS = 60 * 60 * 24 * 30; // 30 dana
+const EXPIRES_SECONDS = 60 * 60 * 24 * 30; 
 
 export async function signAuthToken(claims: JwtUserClaims) {
   return await new SignJWT({ email: claims.email, name: claims.name })

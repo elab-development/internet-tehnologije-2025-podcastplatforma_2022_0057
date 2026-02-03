@@ -73,7 +73,7 @@ export default function AdminSeriesPage() {
     <section className="space-y-12">
       <h1 className="text-2xl font-bold">Upravljanje serijalima</h1>
 
-      {/* ➕ FORMA */}
+      
       <div className="bg-white p-6 rounded-2xl shadow space-y-4 max-w-xl">
         <input
           className="w-full rounded-xl border px-4 py-3"
@@ -117,7 +117,7 @@ export default function AdminSeriesPage() {
         </button>
       </div>
 
-      {/* 📋 TABELA */}
+      
       <table className="w-full bg-white rounded-xl shadow">
         <thead>
           <tr className="border-b">

@@ -7,7 +7,7 @@ export default function HomePage() {
     <main>
       <Navbar />
 
-      {/* Hero */}
+      
  <section className="px-8 py-28 text-center bg-gradient-to-b from-stone-100 to-stone-50">
   <div className="max-w-3xl mx-auto">
     <h1 className="text-4xl md:text-5xl font-bold mb-6 text-zinc-900">
@@ -22,7 +22,7 @@ export default function HomePage() {
 
 
 
-      {/* Popular episodes */}
+     
       <section className="px-8 py-24 max-w-7xl mx-auto">
   <h2 className="text-2xl font-semibold mb-10 text-zinc-900">
     Najpopularnije epizode

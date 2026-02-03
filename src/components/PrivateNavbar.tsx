@@ -40,11 +40,11 @@ export default function PrivateNavbar() {
       credentials: "include",
     });
 
-    await refresh();        // role se vrati na USER
-    setShowSuccess(true);   // prikaži poruku
+    await refresh();        
+    setShowSuccess(true);   
 
     setTimeout(() => {
-      setShowSuccess(false); // sakrij poruku posle 10s
+      setShowSuccess(false); 
     }, 5000);
 
     router.push("/app/series");

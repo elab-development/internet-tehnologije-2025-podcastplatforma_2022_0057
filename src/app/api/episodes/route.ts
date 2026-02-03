@@ -8,7 +8,7 @@ import { users, episodes, series } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
-// 🔒 POST /api/episodes – samo ADMIN
+
 export async function POST(req: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
@@ -28,7 +28,6 @@ export async function POST(req: Request) {
 
   const body = await req.json();
 
-  // 1️⃣ insert epizode
   const [created] = await db
     .insert(episodes)
     .values({
@@ -37,7 +36,7 @@ export async function POST(req: Request) {
     })
     .returning();
 
-  // 2️⃣ izračunaj statistiku
+ 
   const stats = await db
     .select({
       count: sql<number>`count(*)`,
@@ -46,7 +45,7 @@ export async function POST(req: Request) {
     .from(episodes)
     .where(eq(episodes.seriesId, body.seriesId));
 
-  // 3️⃣ update series
+  
   await db
     .update(series)
     .set({
@@ -59,7 +58,7 @@ export async function POST(req: Request) {
   return NextResponse.json(created);
 }
 
-// 📥 GET /api/episodes
+
 export async function GET() {
   const data = await db.select().from(episodes);
   return NextResponse.json(data);
