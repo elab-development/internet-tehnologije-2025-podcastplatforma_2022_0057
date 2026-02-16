@@ -6,6 +6,8 @@ type Series = {
   id: string;
   title: string;
   description: string;
+  imageUrlSer: string;
+  typeId: string;
 };
 
 type SeriesType = {
@@ -22,9 +24,16 @@ export default function AdminSeriesPage() {
   const [imageUrlSer, setImageUrlSer] = useState("");
   const [typeId, setTypeId] = useState("");
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingOriginal, setEditingOriginal] = useState<Series | null>(null);
+
   const load = async () => {
-    const s = await fetch("/api/series").then(r => r.json());
-    const t = await fetch("/api/series-types").then(r => r.json());
+    const s = await fetch("/api/series", { credentials: "include" }).then((r) =>
+      r.json()
+    );
+    const t = await fetch("/api/series-types", {
+      credentials: "include",
+    }).then((r) => r.json());
     setItems(s);
     setTypes(t);
   };
@@ -33,47 +42,110 @@ export default function AdminSeriesPage() {
     load();
   }, []);
 
-  const submit = async () => {
-    if (!title || !description || !typeId || !imageUrlSer) {
-      alert("Popunite sva polja");
-      return;
-    }
-
-    await fetch("/api/series", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        description,
-        imageUrlSer,
-        typeId,
-        totalDurationSec: 0,
-        episodesCount: 0,
-      }),
-    });
-
+  const resetForm = () => {
     setTitle("");
     setDescription("");
     setImageUrlSer("");
     setTypeId("");
-    load();
+    setEditingId(null);
+    setEditingOriginal(null);
+  };
+
+  const onEdit = (s: Series) => {
+    setEditingId(s.id);
+    setEditingOriginal(s);
+
+    // Popuni formu postojećim vrednostima (da user ne mora sve)
+    setTitle(s.title ?? "");
+    setDescription(s.description ?? "");
+    setImageUrlSer(s.imageUrlSer ?? "");
+    setTypeId(s.typeId ?? "");
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const submit = async () => {
+    // ✅ CREATE: mora sve
+    if (!editingId) {
+      if (!title || !description || !typeId || !imageUrlSer) {
+        alert("Popunite sva polja");
+        return;
+      }
+
+      const payload = { title, description, imageUrlSer, typeId };
+
+      const res = await fetch("/api/series", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Greška pri čuvanju");
+        return;
+      }
+
+      resetForm();
+      await load();
+      return;
+    }
+
+    // ✅ EDIT: možeš da menjaš samo deo
+    // ako je neko obrisao polje, vratimo original (da ne pošaljemo prazno)
+    const base = editingOriginal;
+    if (!base) {
+      alert("Greška: nema originalnog serijala za izmenu.");
+      return;
+    }
+
+    const payload = {
+      title: title || base.title,
+      description: description || base.description,
+      imageUrlSer: imageUrlSer || base.imageUrlSer,
+      typeId: typeId || base.typeId,
+    };
+
+    const res = await fetch(`/api/series/${editingId}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Greška pri izmeni");
+      return;
+    }
+
+    resetForm();
+    await load();
   };
 
   const remove = async (id: string) => {
     if (!confirm("Obrisati serijal?")) return;
-    await fetch(`/api/series/${id}`, {
+
+    const res = await fetch(`/api/series/${id}`, {
       method: "DELETE",
       credentials: "include",
     });
-    load();
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Greška pri brisanju");
+      return;
+    }
+
+    if (editingId === id) resetForm();
+    await load();
   };
 
   return (
     <section className="space-y-12">
       <h1 className="text-2xl font-bold">Upravljanje serijalima</h1>
 
-      
       <div className="bg-white p-6 rounded-2xl shadow space-y-4 max-w-xl">
         <input
           className="w-full rounded-xl border px-4 py-3"
@@ -111,36 +183,64 @@ export default function AdminSeriesPage() {
 
         <button
           onClick={submit}
-          className="w-full rounded-xl bg-stone-800 text-white py-3"
+          className="w-full rounded-xl bg-stone-800 hover:bg-stone-700 transition text-white py-3 font-medium"
         >
-          Sačuvaj
+          {editingId ? "Sačuvaj izmene" : "Sačuvaj"}
         </button>
+
+        {editingId && (
+          <button
+            type="button"
+            onClick={resetForm}
+            className="w-full rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-100 transition py-3 font-medium"
+          >
+            Otkaži izmenu
+          </button>
+        )}
+
+        
       </div>
 
-      
-      <table className="w-full bg-white rounded-xl shadow">
+      <table className="w-full bg-white rounded-xl shadow overflow-hidden">
         <thead>
-          <tr className="border-b">
+          <tr className="border-b bg-stone-50">
             <th className="p-4 text-left">Naziv</th>
             <th className="p-4 text-left">Opis</th>
-            <th className="p-4">Akcije</th>
+            <th className="p-4 text-center">Akcije</th>
           </tr>
         </thead>
         <tbody>
           {items.map((s) => (
-            <tr key={s.id} className="border-b">
-              <td className="p-4">{s.title}</td>
+            <tr key={s.id} className="border-b last:border-b-0">
+              <td className="p-4 font-medium">{s.title}</td>
               <td className="p-4 text-sm text-zinc-600">{s.description}</td>
-              <td className="p-4 text-center">
-                <button
-                  onClick={() => remove(s.id)}
-                  className="text-red-600 hover:underline"
-                >
-                  Obriši
-                </button>
+              <td className="p-4">
+                <div className="flex justify-center gap-3">
+                  <button
+                    onClick={() => onEdit(s)}
+                    className="px-4 py-2 rounded-lg border border-stone-300 hover:bg-stone-100 transition text-stone-800"
+                  >
+                    Izmeni
+                  </button>
+
+                  <button
+                    onClick={() => remove(s.id)}
+                    className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 transition text-white"
+                  >
+                    Obriši
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
+
+          {items.length === 0 && (
+            <tr>
+              <td className="p-6 text-center text-zinc-500" colSpan={3}>
+                Nema serijala u bazi.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </section>
