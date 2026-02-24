@@ -1,3 +1,4 @@
+
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
@@ -11,16 +12,19 @@ import fs from "fs";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params?.id;
+    // ✅ OVO JE KLJUČNO
+    const { id } = await context.params;
 
     if (!id) {
-      return NextResponse.json({ error: "Missing episode id" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing episode id" },
+        { status: 400 }
+      );
     }
 
-    // 🔐 Provera tokena
     const token = (await cookies()).get("auth")?.value;
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,7 +32,6 @@ export async function GET(
 
     const claims = await verifyAuthToken(token);
 
-    // 👤 Provera korisnika
     const [user] = await db
       .select()
       .from(users)
@@ -38,14 +41,16 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // 🎧 Uzimamo epizodu
     const [episode] = await db
       .select()
       .from(episodes)
       .where(eq(episodes.id, id));
 
     if (!episode) {
-      return NextResponse.json({ error: "Episode not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Episode not found" },
+        { status: 404 }
+      );
     }
 
     const filePath = path.join(
@@ -56,7 +61,10 @@ export async function GET(
     );
 
     if (!fs.existsSync(filePath)) {
-      return NextResponse.json({ error: "Audio file not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Audio file not found" },
+        { status: 404 }
+      );
     }
 
     const stat = fs.statSync(filePath);
@@ -68,7 +76,7 @@ export async function GET(
     if (ext === ".m4a") contentType = "audio/mp4";
     if (ext === ".wav") contentType = "audio/wav";
 
-    // 🔥 RANGE SUPPORT (ključ da duration radi)
+    // 🔥 RANGE SUPPORT
     if (range) {
       const parts = range.replace(/bytes=/, "").split("-");
       const start = parseInt(parts[0], 10);
@@ -88,7 +96,6 @@ export async function GET(
       });
     }
 
-    // fallback ako nema range
     const stream = fs.createReadStream(filePath);
 
     return new NextResponse(stream as any, {

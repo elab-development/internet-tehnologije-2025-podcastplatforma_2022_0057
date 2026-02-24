@@ -10,6 +10,8 @@ import { randomUUID } from "crypto";
 import path from "path";
 import { writeFile, mkdir } from "fs/promises";
 
+/* ----------------------- POMOĆNE FUNKCIJE ----------------------- */
+
 async function recalcSeries(seriesId: string) {
   const [stats] = await db
     .select({
@@ -29,45 +31,64 @@ async function recalcSeries(seriesId: string) {
     .where(eq(series.id, seriesId));
 }
 
-async function saveUpload(file: File, folder = "uploads") {
+async function saveUpload(file: File, folder: string) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
   const ext = path.extname(file.name) || "";
   const filename = `${randomUUID()}${ext}`;
+
   const uploadDir = path.join(process.cwd(), "public", folder);
   await mkdir(uploadDir, { recursive: true });
 
   const filepath = path.join(uploadDir, filename);
   await writeFile(filepath, buffer);
 
-  return `/${folder}/${filename}`;
+  return filename; // ⚠ vraćamo samo ime fajla
 }
 
 async function requireAdmin() {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
-  if (!token) return { ok: false as const, res: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  if (!token) {
+    return {
+      ok: false as const,
+      res: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
 
   const claims = await verifyAuthToken(token);
   const [user] = await db.select().from(users).where(eq(users.id, claims.sub));
+
   if (!user || user.role !== "ADMIN") {
-    return { ok: false as const, res: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+    return {
+      ok: false as const,
+      res: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    };
   }
 
   return { ok: true as const };
 }
 
-export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
+/* ----------------------- PUT (IZMENA EPIZODE) ----------------------- */
+
+export async function PUT(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
 
   const { id } = await context.params;
 
-  const [before] = await db.select().from(episodes).where(eq(episodes.id, id));
-  if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const [before] = await db
+    .select()
+    .from(episodes)
+    .where(eq(episodes.id, id));
 
-  // ✅ FormData (jer šalješ fajlove)
+  if (!before)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const form = await req.formData();
 
   const nextSeriesIdRaw = form.get("seriesId");
@@ -80,27 +101,43 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     updatedAt: new Date(),
   };
 
-  if (typeof nextSeriesIdRaw === "string" && nextSeriesIdRaw.trim()) patch.seriesId = nextSeriesIdRaw.trim();
-  if (typeof titleRaw === "string" && titleRaw.trim()) patch.title = titleRaw.trim();
+  if (typeof nextSeriesIdRaw === "string" && nextSeriesIdRaw.trim()) {
+    patch.seriesId = nextSeriesIdRaw.trim();
+  }
+
+  if (typeof titleRaw === "string" && titleRaw.trim()) {
+    patch.title = titleRaw.trim();
+  }
+
   if (typeof durationRaw === "string" && durationRaw !== "") {
     const n = Number(durationRaw);
     if (!Number.isFinite(n) || n <= 0) {
-      return NextResponse.json({ error: "Invalid durationSec" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid durationSec" },
+        { status: 400 }
+      );
     }
     patch.durationSec = n;
   }
 
-  // fajlovi su opciono
-  if (image instanceof File) {
-    patch.imageUrlEp = await saveUpload(image);
-  }
-  if (audio instanceof File) {
-    patch.mediaPath = await saveUpload(audio);
+  // ✅ SLUČAJ 1: Upload slike
+  if (image instanceof File && image.size > 0) {
+    const imageFilename = await saveUpload(image, "episodes");
+    patch.imageUrlEp = `/episodes/${imageFilename}`;
   }
 
-  const [updated] = await db.update(episodes).set(patch).where(eq(episodes.id, id)).returning();
+  // ✅ SLUČAJ 2: Upload audio fajla
+  if (audio instanceof File && audio.size > 0) {
+    const audioFilename = await saveUpload(audio, "audios");
+    patch.mediaPath = audioFilename; // samo ime fajla
+  }
 
-  // ako je promenjen serijal → recalc oba
+  const [updated] = await db
+    .update(episodes)
+    .set(patch)
+    .where(eq(episodes.id, id))
+    .returning();
+
   const oldSeriesId = before.seriesId;
   const newSeriesId = updated.seriesId;
 
@@ -114,14 +151,24 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
   return NextResponse.json(updated);
 }
 
-export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
+/* ----------------------- DELETE ----------------------- */
+
+export async function DELETE(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
 
   const { id } = await context.params;
 
-  const [before] = await db.select().from(episodes).where(eq(episodes.id, id));
-  if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const [before] = await db
+    .select()
+    .from(episodes)
+    .where(eq(episodes.id, id));
+
+  if (!before)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await db.delete(episodes).where(eq(episodes.id, id));
 
@@ -129,4 +176,3 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
 
   return NextResponse.json({ ok: true });
 }
-
