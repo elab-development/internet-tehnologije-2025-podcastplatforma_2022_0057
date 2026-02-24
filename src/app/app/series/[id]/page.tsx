@@ -18,6 +18,8 @@ export default function SeriesEpisodesPage() {
   const [forbidden, setForbidden] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [activeEpisode, setActiveEpisode] = useState<Episode | null>(null);
+
   useEffect(() => {
     if (!id) return;
 
@@ -78,7 +80,7 @@ export default function SeriesEpisodesPage() {
   }
 
   return (
-    <section className="p-8 max-w-5xl mx-auto">
+    <section className="p-8 max-w-5xl mx-auto pb-32">
       <h1 className="text-2xl font-bold mb-6">Epizode</h1>
 
       {episodes.length === 0 ? (
@@ -90,7 +92,6 @@ export default function SeriesEpisodesPage() {
               key={ep.id}
               className="rounded-2xl bg-white shadow p-5 flex gap-5 items-center"
             >
-              
               {ep.imageUrlEp ? (
                 <img
                   src={ep.imageUrlEp}
@@ -101,7 +102,6 @@ export default function SeriesEpisodesPage() {
                 <div className="w-28 h-20 rounded-xl bg-stone-200" />
               )}
 
-             
               <div className="flex-1">
                 <div className="font-medium">{ep.title}</div>
                 <div className="text-sm text-zinc-600">
@@ -109,12 +109,39 @@ export default function SeriesEpisodesPage() {
                 </div>
               </div>
 
-              
-              <button className="rounded-xl bg-stone-800 text-white px-4 py-2">
+              <button
+                onClick={() => setActiveEpisode(ep)}
+                className="rounded-xl bg-stone-800 text-white px-4 py-2"
+              >
                 ▶️ Slušaj
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* 🎧 Floating Player */}
+      {activeEpisode && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t p-4">
+          <div className="max-w-5xl mx-auto flex items-center gap-4">
+            
+            <div className="flex-1">
+              <div className="font-medium">{activeEpisode.title}</div>
+              <audio
+                controls
+                autoPlay
+                src={`/api/episodes/${activeEpisode.id}/play`}
+                className="w-full mt-2"
+              />
+            </div>
+
+            <button
+              onClick={() => setActiveEpisode(null)}
+              className="text-zinc-600 hover:text-black"
+            >
+              ✖
+            </button>
+          </div>
         </div>
       )}
     </section>
