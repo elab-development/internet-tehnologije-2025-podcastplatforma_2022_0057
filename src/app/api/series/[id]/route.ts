@@ -6,18 +6,9 @@ import { verifyAuthToken } from "@/lib/auth";
 import { db } from "@/db";
 import { users, series } from "@/db/schema";
 import { eq } from "drizzle-orm";
-
-type UpdateSeriesBody = {
-  id?: string; // zabranjeno
-  title?: string;
-  description?: string;
-  imageUrlSer?: string;
-  typeId?: string;
-
-  // ⛔ zabranjeno jer se računa iz epizoda
-  totalDurationSec?: number;
-  episodesCount?: number;
-};
+import path from "path";
+import fs from "fs/promises";
+import { randomUUID } from "crypto";
 
 export async function PUT(
   req: Request,
@@ -35,20 +26,48 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const data = await req.json();
+  // ✅ formData: title, description, typeId, image (optional)
+  const form = await req.formData();
+  const title = form.get("title");
+  const description = form.get("description");
+  const typeId = form.get("typeId");
+  const image = form.get("image") as File | null;
 
-  // blokiraj polja
-  if ("id" in data) delete data.id;
-  if ("totalDurationSec" in data) delete data.totalDurationSec;
-  if ("episodesCount" in data) delete data.episodesCount;
-
+  // patch: menjamo samo ono što je poslato
   const patch: Partial<typeof series.$inferInsert> = {
-    ...(data.title !== undefined ? { title: data.title } : {}),
-    ...(data.description !== undefined ? { description: data.description } : {}),
-    ...(data.imageUrlSer !== undefined ? { imageUrlSer: data.imageUrlSer } : {}),
-    ...(data.typeId !== undefined ? { typeId: data.typeId } : {}),
     updatedAt: new Date(),
   };
+
+  if (typeof title === "string" && title.trim() !== "") patch.title = title.trim();
+  if (typeof description === "string" && description.trim() !== "")
+    patch.description = description.trim();
+  if (typeof typeId === "string" && typeId.trim() !== "") patch.typeId = typeId.trim();
+
+  // ✅ ako je poslata nova slika → snimi i upiši novu putanju
+  if (image && typeof image.name === "string" && image.size > 0) {
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    await fs.mkdir(uploadsDir, { recursive: true });
+
+    const ext = (image.name.split(".").pop() || "jpg").toLowerCase();
+    const fileName = `${randomUUID()}.${ext}`;
+    const filePath = path.join(uploadsDir, fileName);
+
+    const buffer = Buffer.from(await image.arrayBuffer());
+    await fs.writeFile(filePath, buffer);
+
+    patch.imageUrlSer = `/uploads/${fileName}`;
+  }
+
+  // ⛔ ne diramo: id, totalDurationSec, episodesCount (nema ih ni u patch-u)
+
+  // ako user nije poslao ništa validno (osim updatedAt), možeš vratiti 400
+  const keys = Object.keys(patch);
+  if (keys.length === 1 && keys[0] === "updatedAt") {
+    return NextResponse.json(
+      { error: "Nema podataka za izmenu." },
+      { status: 400 }
+    );
+  }
 
   const [updated] = await db
     .update(series)
@@ -58,7 +77,6 @@ export async function PUT(
 
   return NextResponse.json(updated);
 }
-
 
 export async function DELETE(
   req: Request,
@@ -72,22 +90,14 @@ export async function DELETE(
 
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const claims = await verifyAuthToken(token);
-
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, claims.sub));
-
+  const [user] = await db.select().from(users).where(eq(users.id, claims.sub));
   if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   await db.delete(series).where(eq(series.id, id));
-
   return NextResponse.json({ ok: true });
 }

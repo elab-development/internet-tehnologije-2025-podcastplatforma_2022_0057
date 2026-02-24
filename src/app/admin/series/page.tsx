@@ -21,8 +21,10 @@ export default function AdminSeriesPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [imageUrlSer, setImageUrlSer] = useState("");
   const [typeId, setTypeId] = useState("");
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingOriginal, setEditingOriginal] = useState<Series | null>(null);
@@ -34,6 +36,7 @@ export default function AdminSeriesPage() {
     const t = await fetch("/api/series-types", {
       credentials: "include",
     }).then((r) => r.json());
+
     setItems(s);
     setTypes(t);
   };
@@ -45,8 +48,9 @@ export default function AdminSeriesPage() {
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setImageUrlSer("");
     setTypeId("");
+    setImageFile(null);
+    setFileName("");
     setEditingId(null);
     setEditingOriginal(null);
   };
@@ -55,30 +59,34 @@ export default function AdminSeriesPage() {
     setEditingId(s.id);
     setEditingOriginal(s);
 
-    // Popuni formu postojećim vrednostima (da user ne mora sve)
     setTitle(s.title ?? "");
     setDescription(s.description ?? "");
-    setImageUrlSer(s.imageUrlSer ?? "");
     setTypeId(s.typeId ?? "");
+
+    setImageFile(null);
+    setFileName("");
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const submit = async () => {
-    // ✅ CREATE: mora sve
+    // CREATE
     if (!editingId) {
-      if (!title || !description || !typeId || !imageUrlSer) {
-        alert("Popunite sva polja");
+      if (!title || !description || !typeId || !imageFile) {
+        alert("Popunite sva polja i izaberite sliku.");
         return;
       }
 
-      const payload = { title, description, imageUrlSer, typeId };
+      const form = new FormData();
+      form.append("title", title);
+      form.append("description", description);
+      form.append("typeId", typeId);
+      form.append("image", imageFile);
 
       const res = await fetch("/api/series", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: form,
       });
 
       if (!res.ok) {
@@ -92,26 +100,30 @@ export default function AdminSeriesPage() {
       return;
     }
 
-    // ✅ EDIT: možeš da menjaš samo deo
-    // ako je neko obrisao polje, vratimo original (da ne pošaljemo prazno)
+    // EDIT
     const base = editingOriginal;
     if (!base) {
-      alert("Greška: nema originalnog serijala za izmenu.");
+      alert("Greška: nema originalnog serijala.");
       return;
     }
 
-    const payload = {
-      title: title || base.title,
-      description: description || base.description,
-      imageUrlSer: imageUrlSer || base.imageUrlSer,
-      typeId: typeId || base.typeId,
-    };
+    const form = new FormData();
+
+    form.append("title", title?.trim() ? title : base.title);
+    form.append(
+      "description",
+      description?.trim() ? description : base.description
+    );
+    form.append("typeId", typeId || base.typeId);
+
+    if (imageFile) {
+      form.append("image", imageFile);
+    }
 
     const res = await fetch(`/api/series/${editingId}`, {
       method: "PUT",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: form,
     });
 
     if (!res.ok) {
@@ -146,6 +158,7 @@ export default function AdminSeriesPage() {
     <section className="space-y-12">
       <h1 className="text-2xl font-bold">Upravljanje serijalima</h1>
 
+      {/* FORMA */}
       <div className="bg-white p-6 rounded-2xl shadow space-y-4 max-w-xl">
         <input
           className="w-full rounded-xl border px-4 py-3"
@@ -161,12 +174,36 @@ export default function AdminSeriesPage() {
           onChange={(e) => setDescription(e.target.value)}
         />
 
-        <input
-          className="w-full rounded-xl border px-4 py-3"
-          placeholder="URL slike serijala"
-          value={imageUrlSer}
-          onChange={(e) => setImageUrlSer(e.target.value)}
-        />
+        {/* CUSTOM UPLOAD */}
+        <div className="w-full">
+          <input
+            id="seriesImage"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              setImageFile(f);
+              setFileName(f ? f.name : "");
+            }}
+          />
+
+          <div className="flex items-center gap-3 rounded-xl border px-4 py-3 bg-white">
+            <label
+              htmlFor="seriesImage"
+              className="cursor-pointer rounded-lg bg-stone-800 hover:bg-stone-700 transition text-white px-4 py-2 text-sm font-medium"
+            >
+              Izaberi sliku
+            </label>
+
+            <span className="text-sm text-zinc-600 truncate">
+              {fileName ||
+                (editingId
+                  ? "Slika je već sačuvana (opciono promeni)"
+                  : "Nijedna slika nije izabrana")}
+            </span>
+          </div>
+        </div>
 
         <select
           className="w-full rounded-xl border px-4 py-3"
@@ -197,10 +234,9 @@ export default function AdminSeriesPage() {
             Otkaži izmenu
           </button>
         )}
-
-        
       </div>
 
+      {/* TABELA */}
       <table className="w-full bg-white rounded-xl shadow overflow-hidden">
         <thead>
           <tr className="border-b bg-stone-50">
