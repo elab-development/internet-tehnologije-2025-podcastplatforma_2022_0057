@@ -7,8 +7,8 @@ type Episode = {
   seriesId: string;
   title: string;
   durationSec: number;
-  imageUrlEp: string;
-  mediaPath: string;
+  imageUrlEp: string; // npr "/uploads/xxx.jpg"
+  mediaPath: string;  // npr "/uploads/yyy.mp3"
 };
 
 type Series = {
@@ -23,20 +23,20 @@ export default function AdminEpisodesPage() {
   const [seriesId, setSeriesId] = useState("");
   const [title, setTitle] = useState("");
   const [durationSec, setDurationSec] = useState("");
-  const [imageUrlEp, setImageUrlEp] = useState("");
-  const [mediaPath, setMediaPath] = useState("");
 
-  // ✅ edit mode
+  // upload
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [imageName, setImageName] = useState("");
+  const [audioName, setAudioName] = useState("");
+
+  // edit mode
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingOriginal, setEditingOriginal] = useState<Episode | null>(null);
 
   const load = async () => {
-    const eps = await fetch("/api/episodes", { credentials: "include" }).then((r) =>
-      r.json()
-    );
-    const ser = await fetch("/api/series", { credentials: "include" }).then((r) =>
-      r.json()
-    );
+    const eps = await fetch("/api/episodes", { credentials: "include" }).then((r) => r.json());
+    const ser = await fetch("/api/series", { credentials: "include" }).then((r) => r.json());
     setEpisodes(eps);
     setSeries(ser);
   };
@@ -49,49 +49,67 @@ export default function AdminEpisodesPage() {
     setSeriesId("");
     setTitle("");
     setDurationSec("");
-    setImageUrlEp("");
-    setMediaPath("");
+
+    setImageFile(null);
+    setAudioFile(null);
+    setImageName("");
+    setAudioName("");
+
     setEditingId(null);
     setEditingOriginal(null);
+
+    const img = document.getElementById("epImage") as HTMLInputElement | null;
+    const aud = document.getElementById("epAudio") as HTMLInputElement | null;
+    if (img) img.value = "";
+    if (aud) aud.value = "";
   };
 
-  const onEdit = (ep: Episode) => {
-    setEditingId(ep.id);
-    setEditingOriginal(ep);
+  const onEdit = (e: Episode) => {
+    setEditingId(e.id);
+    setEditingOriginal(e);
 
-    setSeriesId(ep.seriesId ?? "");
-    setTitle(ep.title ?? "");
-    setDurationSec(String(ep.durationSec ?? ""));
-    setImageUrlEp(ep.imageUrlEp ?? "");
-    setMediaPath(ep.mediaPath ?? "");
+    setSeriesId(e.seriesId);
+    setTitle(e.title ?? "");
+    setDurationSec(String(e.durationSec ?? ""));
+
+    // ne biramo automatski fajlove u file input
+    setImageFile(null);
+    setAudioFile(null);
+    setImageName("");
+    setAudioName("");
+
+    const img = document.getElementById("epImage") as HTMLInputElement | null;
+    const aud = document.getElementById("epAudio") as HTMLInputElement | null;
+    if (img) img.value = "";
+    if (aud) aud.value = "";
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const submit = async () => {
-    // CREATE: moraju sva polja
+    // CREATE: mora sve
     if (!editingId) {
-      if (!seriesId || !title || !durationSec || !imageUrlEp || !mediaPath) {
-        alert("Popunite sva polja");
+      if (!seriesId || !title.trim() || !durationSec || !imageFile || !audioFile) {
+        alert("Popunite sva polja i izaberite sliku + audio fajl.");
         return;
       }
+
+      const form = new FormData();
+      form.append("seriesId", seriesId);
+      form.append("title", title.trim());
+      form.append("durationSec", String(Number(durationSec)));
+      form.append("image", imageFile);
+      form.append("audio", audioFile);
 
       const res = await fetch("/api/episodes", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          seriesId,
-          title,
-          durationSec: Number(durationSec),
-          imageUrlEp,
-          mediaPath,
-        }),
+        body: form,
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data.error || "Greška pri čuvanju");
+        alert(data.error || "Greška pri čuvanju epizode");
         return;
       }
 
@@ -100,31 +118,49 @@ export default function AdminEpisodesPage() {
       return;
     }
 
-    // EDIT: možeš menjati delimično (merge sa originalnim)
+    // EDIT: može delimično, fajlovi su opciono
     const base = editingOriginal;
     if (!base) {
-      alert("Greška: nema originalnih podataka za izmenu.");
+      alert("Greška: nema originalne epizode.");
       return;
     }
 
-    const merged = {
-      seriesId: seriesId || base.seriesId,
-      title: title || base.title,
-      durationSec: durationSec ? Number(durationSec) : base.durationSec,
-      imageUrlEp: imageUrlEp || base.imageUrlEp,
-      mediaPath: mediaPath || base.mediaPath,
-    };
+    const form = new FormData();
+
+    // serijal i trajanje možeš da menjaš – ali ne šalji prazno
+    if (seriesId && seriesId !== base.seriesId) form.append("seriesId", seriesId);
+
+    const t = title.trim();
+    if (t && t !== base.title) form.append("title", t);
+
+    if (durationSec !== "" && Number(durationSec) !== base.durationSec) {
+      form.append("durationSec", String(Number(durationSec)));
+    }
+
+    // fajlovi samo ako su izabrani novi
+    if (imageFile) form.append("image", imageFile);
+    if (audioFile) form.append("audio", audioFile);
+
+    if (
+      !form.has("seriesId") &&
+      !form.has("title") &&
+      !form.has("durationSec") &&
+      !form.has("image") &&
+      !form.has("audio")
+    ) {
+      alert("Niste uneli nijednu izmenu.");
+      return;
+    }
 
     const res = await fetch(`/api/episodes/${editingId}`, {
       method: "PUT",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(merged),
+      body: form,
     });
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error || "Greška pri izmeni");
+      alert(data.error || "Greška pri izmeni epizode");
       return;
     }
 
@@ -142,7 +178,7 @@ export default function AdminEpisodesPage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error || "Greška pri brisanju");
+      alert(data.error || "Greška pri brisanju epizode");
       return;
     }
 
@@ -183,19 +219,59 @@ export default function AdminEpisodesPage() {
           onChange={(e) => setDurationSec(e.target.value)}
         />
 
-        <input
-          className="w-full rounded-xl border px-4 py-3"
-          placeholder="URL slike epizode"
-          value={imageUrlEp}
-          onChange={(e) => setImageUrlEp(e.target.value)}
-        />
+        {/* Upload slike */}
+        <div className="w-full">
+          <input
+            id="epImage"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              setImageFile(f);
+              setImageName(f ? f.name : "");
+            }}
+          />
+          <div className="flex items-center gap-3 rounded-xl border px-4 py-3 bg-white">
+            <label
+              htmlFor="epImage"
+              className="cursor-pointer rounded-lg bg-stone-800 hover:bg-stone-700 transition text-white px-4 py-2 text-sm font-medium"
+            >
+              Izaberi sliku
+            </label>
+            <span className="text-sm text-zinc-600 truncate">
+              {imageName ||
+                (editingId ? "Slika je već sačuvana (opciono promeni)" : "Nijedna slika nije izabrana")}
+            </span>
+          </div>
+        </div>
 
-        <input
-          className="w-full rounded-xl border px-4 py-3"
-          placeholder="Media path (Spotify / MP3)"
-          value={mediaPath}
-          onChange={(e) => setMediaPath(e.target.value)}
-        />
+        {/* Upload audio */}
+        <div className="w-full">
+          <input
+            id="epAudio"
+            type="file"
+            accept="audio/*,.mp3,.wav,.m4a"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              setAudioFile(f);
+              setAudioName(f ? f.name : "");
+            }}
+          />
+          <div className="flex items-center gap-3 rounded-xl border px-4 py-3 bg-white">
+            <label
+              htmlFor="epAudio"
+              className="cursor-pointer rounded-lg bg-stone-800 hover:bg-stone-700 transition text-white px-4 py-2 text-sm font-medium"
+            >
+              Izaberi audio fajl
+            </label>
+            <span className="text-sm text-zinc-600 truncate">
+              {audioName ||
+                (editingId ? "Audio je već sačuvan (opciono promeni)" : "Nijedan audio fajl nije izabran")}
+            </span>
+          </div>
+        </div>
 
         <button
           onClick={submit}
@@ -225,7 +301,7 @@ export default function AdminEpisodesPage() {
         <tbody>
           {episodes.map((e) => (
             <tr key={e.id} className="border-b last:border-b-0">
-              <td className="p-4 font-medium">{e.title}</td>
+              <td className="p-4">{e.title}</td>
               <td className="p-4">
                 <div className="flex justify-center gap-3">
                   <button
