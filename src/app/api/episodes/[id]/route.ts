@@ -6,6 +6,9 @@ import { verifyAuthToken } from "@/lib/auth";
 import { db } from "@/db";
 import { users, episodes, series } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
+import path from "path";
+import { writeFile, mkdir } from "fs/promises";
 
 async function recalcSeries(seriesId: string) {
   const [stats] = await db
@@ -26,75 +29,97 @@ async function recalcSeries(seriesId: string) {
     .where(eq(series.id, seriesId));
 }
 
-export async function PUT(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params;
+async function saveUpload(file: File, folder = "uploads") {
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
 
+  const ext = path.extname(file.name) || "";
+  const filename = `${randomUUID()}${ext}`;
+  const uploadDir = path.join(process.cwd(), "public", folder);
+  await mkdir(uploadDir, { recursive: true });
+
+  const filepath = path.join(uploadDir, filename);
+  await writeFile(filepath, buffer);
+
+  return `/${folder}/${filename}`;
+}
+
+async function requireAdmin() {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return { ok: false as const, res: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
 
   const claims = await verifyAuthToken(token);
   const [user] = await db.select().from(users).where(eq(users.id, claims.sub));
-  if (!user || user.role !== "ADMIN")
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!user || user.role !== "ADMIN") {
+    return { ok: false as const, res: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+  }
 
-  // 1) uzmi epizodu pre izmene (da znaš stari seriesId)
+  return { ok: true as const };
+}
+
+export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.res;
+
+  const { id } = await context.params;
+
   const [before] = await db.select().from(episodes).where(eq(episodes.id, id));
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const data = await req.json();
+  // ✅ FormData (jer šalješ fajlove)
+  const form = await req.formData();
 
-  // ne dozvoli promenu id / createdAt
-  if ("id" in data) delete data.id;
-  if ("createdAt" in data) delete data.createdAt;
+  const nextSeriesIdRaw = form.get("seriesId");
+  const titleRaw = form.get("title");
+  const durationRaw = form.get("durationSec");
+  const image = form.get("image");
+  const audio = form.get("audio");
 
-  // PATCH — samo dozvoljena polja
   const patch: Partial<typeof episodes.$inferInsert> = {
-    ...(data.seriesId !== undefined ? { seriesId: data.seriesId } : {}),
-    ...(data.title !== undefined ? { title: data.title } : {}),
-    ...(data.durationSec !== undefined ? { durationSec: Number(data.durationSec) } : {}),
-    ...(data.imageUrlEp !== undefined ? { imageUrlEp: data.imageUrlEp } : {}),
-    ...(data.mediaPath !== undefined ? { mediaPath: data.mediaPath } : {}),
-    ...(data.orderIndex !== undefined ? { orderIndex: data.orderIndex } : {}),
     updatedAt: new Date(),
   };
 
-  const [updated] = await db
-    .update(episodes)
-    .set(patch)
-    .where(eq(episodes.id, id))
-    .returning();
+  if (typeof nextSeriesIdRaw === "string" && nextSeriesIdRaw.trim()) patch.seriesId = nextSeriesIdRaw.trim();
+  if (typeof titleRaw === "string" && titleRaw.trim()) patch.title = titleRaw.trim();
+  if (typeof durationRaw === "string" && durationRaw !== "") {
+    const n = Number(durationRaw);
+    if (!Number.isFinite(n) || n <= 0) {
+      return NextResponse.json({ error: "Invalid durationSec" }, { status: 400 });
+    }
+    patch.durationSec = n;
+  }
 
-  // 2) preračunaj totals za novi serijal
-  await recalcSeries(updated.seriesId);
+  // fajlovi su opciono
+  if (image instanceof File) {
+    patch.imageUrlEp = await saveUpload(image);
+  }
+  if (audio instanceof File) {
+    patch.mediaPath = await saveUpload(audio);
+  }
 
-  // 3) ako je prebačena u drugi serijal, preračunaj i stari
-  if (before.seriesId !== updated.seriesId) {
-    await recalcSeries(before.seriesId);
+  const [updated] = await db.update(episodes).set(patch).where(eq(episodes.id, id)).returning();
+
+  // ako je promenjen serijal → recalc oba
+  const oldSeriesId = before.seriesId;
+  const newSeriesId = updated.seriesId;
+
+  if (oldSeriesId !== newSeriesId) {
+    await recalcSeries(oldSeriesId);
+    await recalcSeries(newSeriesId);
+  } else {
+    await recalcSeries(newSeriesId);
   }
 
   return NextResponse.json(updated);
 }
 
-export async function DELETE(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.res;
+
   const { id } = await context.params;
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const claims = await verifyAuthToken(token);
-  const [user] = await db.select().from(users).where(eq(users.id, claims.sub));
-  if (!user || user.role !== "ADMIN")
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-  // da znamo kom serijalu pripada pre brisanja
   const [before] = await db.select().from(episodes).where(eq(episodes.id, id));
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

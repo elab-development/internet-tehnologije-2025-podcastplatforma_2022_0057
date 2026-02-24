@@ -53,6 +53,10 @@ export default function AdminSeriesPage() {
     setFileName("");
     setEditingId(null);
     setEditingOriginal(null);
+
+    // reset file input (da se obriše selected file u UI)
+    const el = document.getElementById("seriesImage") as HTMLInputElement | null;
+    if (el) el.value = "";
   };
 
   const onEdit = (s: Series) => {
@@ -66,20 +70,23 @@ export default function AdminSeriesPage() {
     setImageFile(null);
     setFileName("");
 
+    const el = document.getElementById("seriesImage") as HTMLInputElement | null;
+    if (el) el.value = "";
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const submit = async () => {
-    // CREATE
+    // ✅ CREATE: mora sve + slika
     if (!editingId) {
-      if (!title || !description || !typeId || !imageFile) {
+      if (!title.trim() || !description.trim() || !typeId || !imageFile) {
         alert("Popunite sva polja i izaberite sliku.");
         return;
       }
 
       const form = new FormData();
-      form.append("title", title);
-      form.append("description", description);
+      form.append("title", title.trim());
+      form.append("description", description.trim());
       form.append("typeId", typeId);
       form.append("image", imageFile);
 
@@ -100,7 +107,7 @@ export default function AdminSeriesPage() {
       return;
     }
 
-    // EDIT
+    // ✅ EDIT: šalji samo ono što ima smisla (bez praznih)
     const base = editingOriginal;
     if (!base) {
       alert("Greška: nema originalnog serijala.");
@@ -109,15 +116,29 @@ export default function AdminSeriesPage() {
 
     const form = new FormData();
 
-    form.append("title", title?.trim() ? title : base.title);
-    form.append(
-      "description",
-      description?.trim() ? description : base.description
-    );
-    form.append("typeId", typeId || base.typeId);
+    // title/description: ako su prazni -> ne šalji, backend neka zadrži staro
+    const t = title.trim();
+    const d = description.trim();
 
-    if (imageFile) {
-      form.append("image", imageFile);
+    if (t && t !== base.title) form.append("title", t);
+    if (d && d !== base.description) form.append("description", d);
+
+    // typeId: ako user nije izabrao ništa (""), NEMOJ slati
+    // i ako je ostao isti, ne moraš slati
+    if (typeId && typeId !== base.typeId) form.append("typeId", typeId);
+
+    // slika: samo ako je izabrana nova
+    if (imageFile) form.append("image", imageFile);
+
+    // ako baš ništa nije promenjeno
+    if (
+      !form.has("title") &&
+      !form.has("description") &&
+      !form.has("typeId") &&
+      !form.has("image")
+    ) {
+      alert("Niste uneli nijednu izmenu.");
+      return;
     }
 
     const res = await fetch(`/api/series/${editingId}`, {
@@ -158,7 +179,6 @@ export default function AdminSeriesPage() {
     <section className="space-y-12">
       <h1 className="text-2xl font-bold">Upravljanje serijalima</h1>
 
-      {/* FORMA */}
       <div className="bg-white p-6 rounded-2xl shadow space-y-4 max-w-xl">
         <input
           className="w-full rounded-xl border px-4 py-3"
@@ -236,7 +256,6 @@ export default function AdminSeriesPage() {
         )}
       </div>
 
-      {/* TABELA */}
       <table className="w-full bg-white rounded-xl shadow overflow-hidden">
         <thead>
           <tr className="border-b bg-stone-50">
