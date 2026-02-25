@@ -9,6 +9,8 @@ import { eq, ilike, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import path from "path";
 import fs from "fs/promises";
+import { requireOrigin } from "@/lib/security";
+import { requireCsrf } from "@/lib/csrf";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -45,6 +47,13 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  // ✅ CORS zaštita
+  const cors = requireOrigin(req);
+  if (cors) return cors;
+
+  // ✅ CSRF zaštita
+  const csrf = await requireCsrf(req);
+  if (csrf) return csrf;
   // auth
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;

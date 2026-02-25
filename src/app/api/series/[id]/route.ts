@@ -9,6 +9,9 @@ import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import path from "path";
 import fs from "fs/promises";
+import { requireOrigin } from "@/lib/security";
+import { requireCsrf } from "@/lib/csrf";
+
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -47,6 +50,13 @@ export async function PUT(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  // ✅ CORS zaštita
+  const cors = requireOrigin(req);
+  if (cors) return cors;
+
+  // ✅ CSRF zaštita
+  const csrf = await requireCsrf(req);
+  if (csrf) return csrf;
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
 
@@ -97,6 +107,13 @@ export async function DELETE(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  // ✅ CORS zaštita
+  const cors = requireOrigin(req);
+  if (cors) return cors;
+
+  // ✅ CSRF zaštita
+  const csrf = await requireCsrf(req);
+  if (csrf) return csrf;
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
 

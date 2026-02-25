@@ -6,11 +6,21 @@ import { verifyAuthToken } from "@/lib/auth";
 import { db } from "@/db";
 import { users, paidProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { requireOrigin } from "@/lib/security";
+import { requireCsrf } from "@/lib/csrf";
+
 
 export async function POST(req: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
 
+// ✅ CORS zaštita
+  const cors = requireOrigin(req);
+  if (cors) return cors;
+
+  // ✅ CSRF zaštita
+  const csrf = await requireCsrf(req);
+  if (csrf) return csrf;
  
   if (!token) {
     return NextResponse.json({ error: "Niste prijavljeni" }, { status: 401 });
