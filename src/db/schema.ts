@@ -83,6 +83,9 @@ export const episodes = pgTable(
     imageUrlEp: text("imageUrlEp").notNull(), 
     mediaPath: text("media_path").notNull(), 
     orderIndex: integer("order_index"),
+    // DODAJ OVE DVE LINIJE ISPOD:
+    transcript: text("transcript"), // Može biti null dok AI ne završi obradu
+    summary: text("summary"),      // Može biti null dok AI ne završi obradu
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

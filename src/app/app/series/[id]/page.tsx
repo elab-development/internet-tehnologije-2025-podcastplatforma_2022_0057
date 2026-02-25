@@ -8,6 +8,9 @@ type Episode = {
   title: string;
   durationSec: number;
   imageUrlEp: string | null;
+  // DODATO:
+  transcript: string | null;
+  summary: string | null;
 };
 
 type Progress = {
@@ -29,6 +32,9 @@ export default function SeriesEpisodesPage() {
   const [showNextButton, setShowNextButton] = useState(false);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
+  
+  // DODATO: Stanje za prikaz transkripta
+  const [showTranscript, setShowTranscript] = useState(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -114,6 +120,8 @@ export default function SeriesEpisodesPage() {
     }
 
     lastSavedRef.current = 0;
+    // Resetuj prikaz transkripta kada se promeni epizoda
+    setShowTranscript(false);
   }, [activeEpisode]);
 
   /* ================= AUTOSAVE ================= */
@@ -286,115 +294,131 @@ export default function SeriesEpisodesPage() {
         })}
       </div>
 
- {activeEpisode && (
-  <div className="fixed bottom-0 left-0 right-0 bg-white/95 border-t shadow-2xl p-6">
-    <div className="max-w-5xl mx-auto relative flex items-start gap-6">
+      {activeEpisode && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 border-t shadow-2xl p-6 z-50 transition-all">
+          <div className="max-w-5xl mx-auto space-y-4">
+            
+            {/* Gornji red: Info i Kontrole */}
+            <div className="relative flex items-start gap-6">
+              <button
+                onClick={() => {
+                  if (audioRef.current) audioRef.current.pause();
+                  setActiveEpisode(null);
+                  setShowNextButton(false);
+                  setIsPlaying(false);
+                  setCurrentTime(0);
+                }}
+                className="absolute -right-2 -top-2 text-stone-400 hover:text-black text-xl transition bg-stone-100 rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                ✕
+              </button>
 
-      {/* ❌ X dugme */}
-      <button
-        onClick={() => {
-          if (audioRef.current) audioRef.current.pause();
-          setActiveEpisode(null);
-          setShowNextButton(false);
-          setIsPlaying(false);
-          setCurrentTime(0);
-        }}
-        className="absolute right-0 top-0 text-stone-600 hover:text-black text-xl transition"
-      >
-        ✕
-      </button>
+              {activeEpisode.imageUrlEp && (
+                <img
+                  src={activeEpisode.imageUrlEp}
+                  className="w-20 h-20 rounded-xl object-cover shadow hidden sm:block"
+                />
+              )}
 
-      {/* 🎧 SLIKA EPIZODE */}
-      {activeEpisode.imageUrlEp && (
-        <img
-          src={activeEpisode.imageUrlEp}
-          className="w-20 h-20 rounded-xl object-cover shadow"
-        />
+              <div className="flex-1 space-y-3">
+                <div className="font-semibold text-stone-800 flex justify-between items-center">
+                  <span>{activeEpisode.title}</span>
+                  {/* DUGME ZA TRANSKRIPT */}
+                  <button 
+                    onClick={() => setShowTranscript(!showTranscript)}
+                    className="text-xs bg-stone-200 hover:bg-stone-300 px-3 py-1 rounded-lg transition"
+                  >
+                    {showTranscript ? "Sakrij detalje" : "AI Rezime i Transkript"}
+                  </button>
+                </div>
+
+                <audio
+                  ref={audioRef}
+                  autoPlay
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={handlePause}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={handleEnded}
+                  src={`/api/episodes/${activeEpisode.id}/play`}
+                />
+
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => { if (audioRef.current) audioRef.current.currentTime -= 15; }}
+                    className="px-4 py-2 bg-stone-200 rounded-full hover:bg-stone-300 transition text-sm"
+                  >
+                    ⏪ 15s
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (!audioRef.current) return;
+                      audioRef.current.paused ? audioRef.current.play() : audioRef.current.pause();
+                    }}
+                    className="px-6 py-3 bg-stone-800 text-white rounded-full hover:bg-black transition"
+                  >
+                    {isPlaying ? "⏸" : "▶"}
+                  </button>
+
+                  <button
+                    onClick={() => { if (audioRef.current) audioRef.current.currentTime += 15; }}
+                    className="px-4 py-2 bg-stone-200 rounded-full hover:bg-stone-300 transition text-sm"
+                  >
+                    15s ⏩
+                  </button>
+
+                  <div className="text-sm text-stone-600 ml-4 font-mono">
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </div>
+                </div>
+
+                <input
+                  type="range"
+                  min={0}
+                  max={duration}
+                  value={currentTime}
+                  onChange={(e) => {
+                    if (!audioRef.current) return;
+                    const newTime = Number(e.target.value);
+                    audioRef.current.currentTime = newTime;
+                    setCurrentTime(newTime);
+                  }}
+                  className="w-full accent-stone-800 h-1.5"
+                />
+              </div>
+            </div>
+
+            {/* AI SEKCIJA (Pojavljuje se na klik) */}
+            {showTranscript && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="bg-stone-100 p-4 rounded-2xl border border-stone-200">
+                  <h4 className="text-xs font-bold uppercase text-stone-500 mb-2">✨ AI Rezime</h4>
+                  <div className="text-sm text-stone-700 leading-relaxed max-h-32 overflow-y-auto">
+                    {activeEpisode.summary || "Rezime još uvek nije generisan za ovu epizodu."}
+                  </div>
+                </div>
+                <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
+                  <h4 className="text-xs font-bold uppercase text-stone-500 mb-2">📝 Transkript</h4>
+                  <div className="text-sm text-stone-600 font-serif max-h-32 overflow-y-auto">
+                    {activeEpisode.transcript || "Transkript nije dostupan."}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {showNextButton && (
+              <div className="flex justify-end">
+                <button
+                  onClick={playNextEpisode}
+                  className="px-6 py-2 rounded-full bg-stone-800 text-white hover:bg-black transition shadow-lg"
+                >
+                  ▶ Sledeća epizoda
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
-
-      {/* DESNI DEO */}
-      <div className="flex-1 space-y-3 pr-6">
-        <div className="font-semibold text-stone-800">
-          {activeEpisode.title}
-        </div>
-
-        <audio
-          ref={audioRef}
-          autoPlay
-          onPlay={() => setIsPlaying(true)}
-          onPause={handlePause}
-          onTimeUpdate={handleTimeUpdate}
-          onEnded={handleEnded}
-          src={`/api/episodes/${activeEpisode.id}/play`}
-        />
-
-        <div className="flex items-center gap-4">
-
-          <button
-            onClick={() => {
-              if (!audioRef.current) return;
-              audioRef.current.currentTime -= 15;
-            }}
-            className="px-4 py-2 bg-stone-200 rounded-full hover:bg-stone-300 transition"
-          >
-            ⏪ 15s
-          </button>
-
-          <button
-            onClick={() => {
-              if (!audioRef.current) return;
-              audioRef.current.paused
-                ? audioRef.current.play()
-                : audioRef.current.pause();
-            }}
-            className="px-6 py-3 bg-stone-800 text-white rounded-full hover:bg-black transition"
-          >
-            {isPlaying ? "⏸" : "▶"}
-          </button>
-
-          <button
-            onClick={() => {
-              if (!audioRef.current) return;
-              audioRef.current.currentTime += 15;
-            }}
-            className="px-4 py-2 bg-stone-200 rounded-full hover:bg-stone-300 transition"
-          >
-            15s ⏩
-          </button>
-
-          <div className="text-sm text-stone-600 ml-4">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </div>
-        </div>
-
-        <input
-          type="range"
-          min={0}
-          max={duration}
-          value={currentTime}
-          onChange={(e) => {
-            if (!audioRef.current) return;
-            const newTime = Number(e.target.value);
-            audioRef.current.currentTime = newTime;
-            setCurrentTime(newTime);
-          }}
-          className="w-full accent-stone-800"
-        />
-
-        {showNextButton && (
-          <div className="flex justify-end">
-            <button
-              onClick={playNextEpisode}
-              className="px-6 py-2 rounded-full bg-stone-800 text-white"
-            >
-              ▶ Sledeća epizoda
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-)}
     </section>
   );
 }
