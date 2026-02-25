@@ -3,6 +3,9 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyAuthToken } from "@/lib/auth";
+import { requireOrigin } from "@/lib/security";
+import { requireCsrf } from "@/lib/csrf";
+
 import { db } from "@/db";
 import { users, episodes, series } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -41,10 +44,19 @@ async function saveUpload(file: File, folder = "uploads") {
   const filepath = path.join(uploadDir, filename);
   await writeFile(filepath, buffer);
 
-  return `/${folder}/${filename}`; // ovo ide u bazu
+  return `/${folder}/${filename}`;
 }
 
 export async function POST(req: Request) {
+  // ✅ CORS zaštita
+  const cors = requireOrigin(req);
+  if (cors) return cors;
+
+  // ✅ CSRF zaštita
+  const csrf = await requireCsrf(req);
+  if (csrf) return csrf;
+
+  // ✅ Auth (ADMIN)
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -71,7 +83,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Image and audio are required" }, { status: 400 });
   }
 
-  // snimi fajlove
   const imageUrlEp = await saveUpload(image);
   const mediaPath = await saveUpload(audio);
 
@@ -94,7 +105,11 @@ export async function POST(req: Request) {
   return NextResponse.json(created);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  // (opciono) može i ovde CORS
+  const cors = requireOrigin(req);
+  if (cors) return cors;
+
   const data = await db.select().from(episodes);
   return NextResponse.json(data);
 }
