@@ -1,0 +1,47 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Podcast API",
+    "version": "1.0.0",
+    "description": "API specifikacija za podcast aplikaciju"
+  },
+  "servers": [
+    { "url": "http://localhost:3000" }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "summary": "Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/series": {
+      "get": {
+        "summary": "Lista serijala",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "summary": "Kreiranje serijala (ADMIN)",
+        "responses": { "200": { "description": "OK" }, "403": { "description": "Forbidden" } }
+      }
+    }
+  }
+}

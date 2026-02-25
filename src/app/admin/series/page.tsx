@@ -29,13 +29,22 @@ export default function AdminSeriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingOriginal, setEditingOriginal] = useState<Series | null>(null);
 
+  // ✅ CSRF
+  const [csrf, setCsrf] = useState("");
+
+  // ✅ učitaj CSRF token (ruta ti vraća { csrf: token } po tvom kodu)
+  useEffect(() => {
+    fetch("/api/csrf", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setCsrf(d.csrf ?? "")) // <-- OVDE je bitno: d.csrf
+      .catch(() => setCsrf(""));
+  }, []);
+
   const load = async () => {
-    const s = await fetch("/api/series", { credentials: "include" }).then((r) =>
-      r.json()
-    );
-    const t = await fetch("/api/series-types", {
-      credentials: "include",
-    }).then((r) => r.json());
+    const [s, t] = await Promise.all([
+      fetch("/api/series", { credentials: "include" }).then((r) => r.json()),
+      fetch("/api/series-types", { credentials: "include" }).then((r) => r.json()),
+    ]);
 
     setItems(s);
     setTypes(t);
@@ -54,7 +63,6 @@ export default function AdminSeriesPage() {
     setEditingId(null);
     setEditingOriginal(null);
 
-    // reset file input (da se obriše selected file u UI)
     const el = document.getElementById("seriesImage") as HTMLInputElement | null;
     if (el) el.value = "";
   };
@@ -77,7 +85,12 @@ export default function AdminSeriesPage() {
   };
 
   const submit = async () => {
-    // ✅ CREATE: mora sve + slika
+    if (!csrf) {
+      alert("CSRF token nije učitan. Osveži stranicu.");
+      return;
+    }
+
+    // CREATE
     if (!editingId) {
       if (!title.trim() || !description.trim() || !typeId || !imageFile) {
         alert("Popunite sva polja i izaberite sliku.");
@@ -93,6 +106,9 @@ export default function AdminSeriesPage() {
       const res = await fetch("/api/series", {
         method: "POST",
         credentials: "include",
+        headers: {
+          "x-csrf-token": csrf,
+        },
         body: form,
       });
 
@@ -107,7 +123,7 @@ export default function AdminSeriesPage() {
       return;
     }
 
-    // ✅ EDIT: šalji samo ono što ima smisla (bez praznih)
+    // EDIT
     const base = editingOriginal;
     if (!base) {
       alert("Greška: nema originalnog serijala.");
@@ -116,27 +132,15 @@ export default function AdminSeriesPage() {
 
     const form = new FormData();
 
-    // title/description: ako su prazni -> ne šalji, backend neka zadrži staro
     const t = title.trim();
     const d = description.trim();
 
     if (t && t !== base.title) form.append("title", t);
     if (d && d !== base.description) form.append("description", d);
-
-    // typeId: ako user nije izabrao ništa (""), NEMOJ slati
-    // i ako je ostao isti, ne moraš slati
     if (typeId && typeId !== base.typeId) form.append("typeId", typeId);
-
-    // slika: samo ako je izabrana nova
     if (imageFile) form.append("image", imageFile);
 
-    // ako baš ništa nije promenjeno
-    if (
-      !form.has("title") &&
-      !form.has("description") &&
-      !form.has("typeId") &&
-      !form.has("image")
-    ) {
+    if (!form.has("title") && !form.has("description") && !form.has("typeId") && !form.has("image")) {
       alert("Niste uneli nijednu izmenu.");
       return;
     }
@@ -144,6 +148,9 @@ export default function AdminSeriesPage() {
     const res = await fetch(`/api/series/${editingId}`, {
       method: "PUT",
       credentials: "include",
+      headers: {
+        "x-csrf-token": csrf,
+      },
       body: form,
     });
 
@@ -158,11 +165,19 @@ export default function AdminSeriesPage() {
   };
 
   const remove = async (id: string) => {
+    if (!csrf) {
+      alert("CSRF token nije učitan. Osveži stranicu.");
+      return;
+    }
+
     if (!confirm("Obrisati serijal?")) return;
 
     const res = await fetch(`/api/series/${id}`, {
       method: "DELETE",
       credentials: "include",
+      headers: {
+        "x-csrf-token": csrf,
+      },
     });
 
     if (!res.ok) {
