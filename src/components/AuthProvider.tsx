@@ -17,6 +17,8 @@ type AuthContextType = {
   logout: () => Promise<void>;
 };
 
+
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -32,6 +34,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
     setLoading(false);
   };
+  const [csrf, setCsrf] = useState<string>("");
+
+useEffect(() => {
+  fetch("/api/csrf", { credentials: "include" })
+    .then(r => r.json())
+    .then(d => setCsrf(d.token))
+    .catch(() => {});
+}, []);
 
  const logout = async () => {
   await fetch("/api/auth/logout", { method: "POST" });

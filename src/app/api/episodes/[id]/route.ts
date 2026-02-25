@@ -9,6 +9,8 @@ import { eq, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import path from "path";
 import { writeFile, mkdir } from "fs/promises";
+import { requireOrigin } from "@/lib/security";
+import { requireCsrf } from "@/lib/csrf";
 
 /* ----------------------- POMOĆNE FUNKCIJE ----------------------- */
 
@@ -70,14 +72,20 @@ async function requireAdmin() {
   return { ok: true as const };
 }
 
-/* ----------------------- PUT (IZMENA EPIZODE) ----------------------- */
 
-export async function PUT(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
+
+  
+
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
+  // ✅ CORS zaštita
+  const cors = requireOrigin(req);
+  if (cors) return cors;
+
+  // ✅ CSRF zaštita
+  const csrf = await requireCsrf(req);
+  if (csrf) return csrf;
 
   const { id } = await context.params;
 
@@ -151,12 +159,16 @@ export async function PUT(
   return NextResponse.json(updated);
 }
 
-/* ----------------------- DELETE ----------------------- */
 
-export async function DELETE(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
+  // ✅ CORS zaštita
+  const cors = requireOrigin(req);
+  if (cors) return cors;
+
+  // ✅ CSRF zaštita
+  const csrf = await requireCsrf(req);
+  if (csrf) return csrf;
+
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
 
