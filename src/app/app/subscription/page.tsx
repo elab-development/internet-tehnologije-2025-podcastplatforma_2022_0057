@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -16,8 +16,23 @@ export default function SubscriptionPage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ✅ CSRF kao u admin page
+  const [csrf, setCsrf] = useState("");
+
+  useEffect(() => {
+    fetch("/api/csrf", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setCsrf(d.csrf ?? "")) // ruta vraća { csrf: token }
+      .catch(() => setCsrf(""));
+  }, []);
+
   const submit = async () => {
     setError("");
+
+    if (!csrf) {
+      setError("CSRF token nije učitan. Osveži stranicu.");
+      return;
+    }
 
     const accountNumber = `${part1}-${part2}-${part3}`;
     const accountRegex = /^\d{3}-\d{1,13}-\d{2}$/;
@@ -32,26 +47,29 @@ export default function SubscriptionPage() {
     try {
       const res = await fetch("/api/subscription", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          "x-csrf-token": csrf,
         },
         body: JSON.stringify({ accountNumber }),
       });
 
       if (!res.ok) {
-        setError("Greška pri pretplati");
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Greška pri pretplati");
         return;
       }
 
       setSuccess(true);
 
-      
       await refresh();
 
-      
       setTimeout(() => {
         router.push("/app/series");
       }, 1200);
+    } catch {
+      setError("Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }
@@ -70,7 +88,6 @@ export default function SubscriptionPage() {
 
         {!success ? (
           <>
-            
             <div className="flex gap-2 mb-4">
               <input
                 type="text"
@@ -79,9 +96,7 @@ export default function SubscriptionPage() {
                 placeholder="___"
                 className="w-20 text-center rounded-xl border border-stone-300 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
                 value={part1}
-                onChange={(e) =>
-                  setPart1(e.target.value.replace(/\D/g, ""))
-                }
+                onChange={(e) => setPart1(e.target.value.replace(/\D/g, ""))}
               />
 
               <span className="self-center text-stone-500">-</span>
@@ -93,9 +108,7 @@ export default function SubscriptionPage() {
                 placeholder="______"
                 className="flex-1 text-center rounded-xl border border-stone-300 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
                 value={part2}
-                onChange={(e) =>
-                  setPart2(e.target.value.replace(/\D/g, ""))
-                }
+                onChange={(e) => setPart2(e.target.value.replace(/\D/g, ""))}
               />
 
               <span className="self-center text-stone-500">-</span>
@@ -107,16 +120,12 @@ export default function SubscriptionPage() {
                 placeholder="__"
                 className="w-16 text-center rounded-xl border border-stone-300 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
                 value={part3}
-                onChange={(e) =>
-                  setPart3(e.target.value.replace(/\D/g, ""))
-                }
+                onChange={(e) => setPart3(e.target.value.replace(/\D/g, ""))}
               />
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 text-center mb-4">
-                {error}
-              </p>
+              <p className="text-sm text-red-600 text-center mb-4">{error}</p>
             )}
 
             <button

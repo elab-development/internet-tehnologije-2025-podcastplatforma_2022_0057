@@ -8,7 +8,7 @@ type Episode = {
   title: string;
   durationSec: number;
   imageUrlEp: string; // npr "/uploads/xxx.jpg"
-  mediaPath: string;  // npr "/uploads/yyy.mp3"
+  mediaPath: string; // npr "/uploads/yyy.mp3"
 };
 
 type Series = {
@@ -39,8 +39,14 @@ export default function AdminEpisodesPage() {
   const [editingOriginal, setEditingOriginal] = useState<Episode | null>(null);
 
   const load = async () => {
-    const eps = await fetch("/api/episodes", { credentials: "include" }).then((r) => r.json());
-    const ser = await fetch("/api/series", { credentials: "include" }).then((r) => r.json());
+    const [epsRes, serRes] = await Promise.all([
+      fetch("/api/episodes", { credentials: "include" }),
+      fetch("/api/series", { credentials: "include" }),
+    ]);
+
+    const eps = await epsRes.json();
+    const ser = await serRes.json();
+
     setEpisodes(eps);
     setSeries(ser);
   };
@@ -49,13 +55,35 @@ export default function AdminEpisodesPage() {
     const init = async () => {
       try {
         setCsrfLoading(true);
-        const d = await fetch("/api/csrf", { credentials: "include" }).then((r) => r.json());
-        setCsrf(d?.csrf ?? "");
+
+        const csrfRes = await fetch("/api/csrf", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!csrfRes.ok) {
+          console.error("CSRF fetch failed");
+          setCsrf("");
+          return;
+        }
+
+        const data = await csrfRes.json();
+
+        // ruta ti vraća { csrf: token }
+        setCsrf(data?.csrf ?? "");
+
+        // ako tvoja ruta vraća { csrfToken }, zameni sa:
+        // setCsrf(data?.csrfToken ?? "");
+      } catch (e) {
+        console.error("CSRF error", e);
+        setCsrf("");
       } finally {
         setCsrfLoading(false);
       }
+
       await load();
     };
+
     init();
   }, []);
 
@@ -86,7 +114,7 @@ export default function AdminEpisodesPage() {
     setTitle(e.title ?? "");
     setDurationSec(String(e.durationSec ?? ""));
 
-    // ne biramo automatski fajlove u file input
+    // file input ne može da se setuje programatski
     setImageFile(null);
     setAudioFile(null);
     setImageName("");
@@ -147,7 +175,7 @@ export default function AdminEpisodesPage() {
       return;
     }
 
-    // EDIT: može delimično, fajlovi su opciono
+    // EDIT: može delimično, fajlovi opciono
     const base = editingOriginal;
     if (!base) {
       alert("Greška: nema originalne epizode.");
