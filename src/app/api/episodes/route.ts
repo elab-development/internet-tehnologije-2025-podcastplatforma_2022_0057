@@ -48,13 +48,7 @@ async function saveUpload(file: File, folder = "uploads") {
 }
 
 export async function POST(req: Request) {
-  // ✅ CORS zaštita
-  const cors = requireOrigin(req);
-  if (cors) return cors;
-
-  // ✅ CSRF zaštita
-  const csrf = await requireCsrf(req);
-  if (csrf) return csrf;
+  
 
   // ✅ Auth (ADMIN)
   const cookieStore = await cookies();
@@ -66,6 +60,13 @@ export async function POST(req: Request) {
   if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  // ✅ CORS zaštita
+  const cors = requireOrigin(req);
+  if (cors) return cors;
+
+  // ✅ CSRF zaštita
+  const csrf = await requireCsrf(req);
+  if (csrf) return csrf;
 
   // ✅ FormData
   const form = await req.formData();

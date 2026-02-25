@@ -6,14 +6,21 @@ import { verifyAuthToken } from "@/lib/auth";
 import { db } from "@/db";
 import { users, paidProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { requireOrigin } from "@/lib/security";
+import { requireCsrf } from "@/lib/csrf";
+
 
 export async function POST() {
+ 
  const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
+  
+
   
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  
 
 
   const claims = await verifyAuthToken(token);

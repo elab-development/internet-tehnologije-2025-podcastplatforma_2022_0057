@@ -30,6 +30,10 @@ export default function AdminEpisodesPage() {
   const [imageName, setImageName] = useState("");
   const [audioName, setAudioName] = useState("");
 
+  // csrf
+  const [csrf, setCsrf] = useState("");
+  const [csrfLoading, setCsrfLoading] = useState(true);
+
   // edit mode
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingOriginal, setEditingOriginal] = useState<Episode | null>(null);
@@ -42,7 +46,17 @@ export default function AdminEpisodesPage() {
   };
 
   useEffect(() => {
-    load();
+    const init = async () => {
+      try {
+        setCsrfLoading(true);
+        const d = await fetch("/api/csrf", { credentials: "include" }).then((r) => r.json());
+        setCsrf(d?.csrf ?? "");
+      } finally {
+        setCsrfLoading(false);
+      }
+      await load();
+    };
+    init();
   }, []);
 
   const resetForm = () => {
@@ -86,7 +100,21 @@ export default function AdminEpisodesPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const ensureCsrf = () => {
+    if (csrfLoading) {
+      alert("Učitavam CSRF token... Sačekaj trenutak.");
+      return false;
+    }
+    if (!csrf) {
+      alert("CSRF token nije učitan. Osveži stranicu.");
+      return false;
+    }
+    return true;
+  };
+
   const submit = async () => {
+    if (!ensureCsrf()) return;
+
     // CREATE: mora sve
     if (!editingId) {
       if (!seriesId || !title.trim() || !durationSec || !imageFile || !audioFile) {
@@ -104,6 +132,7 @@ export default function AdminEpisodesPage() {
       const res = await fetch("/api/episodes", {
         method: "POST",
         credentials: "include",
+        headers: { "x-csrf-token": csrf },
         body: form,
       });
 
@@ -127,7 +156,6 @@ export default function AdminEpisodesPage() {
 
     const form = new FormData();
 
-    // serijal i trajanje možeš da menjaš – ali ne šalji prazno
     if (seriesId && seriesId !== base.seriesId) form.append("seriesId", seriesId);
 
     const t = title.trim();
@@ -137,7 +165,6 @@ export default function AdminEpisodesPage() {
       form.append("durationSec", String(Number(durationSec)));
     }
 
-    // fajlovi samo ako su izabrani novi
     if (imageFile) form.append("image", imageFile);
     if (audioFile) form.append("audio", audioFile);
 
@@ -155,6 +182,7 @@ export default function AdminEpisodesPage() {
     const res = await fetch(`/api/episodes/${editingId}`, {
       method: "PUT",
       credentials: "include",
+      headers: { "x-csrf-token": csrf },
       body: form,
     });
 
@@ -169,11 +197,13 @@ export default function AdminEpisodesPage() {
   };
 
   const remove = async (id: string) => {
+    if (!ensureCsrf()) return;
     if (!confirm("Obrisati epizodu?")) return;
 
     const res = await fetch(`/api/episodes/${id}`, {
       method: "DELETE",
       credentials: "include",
+      headers: { "x-csrf-token": csrf },
     });
 
     if (!res.ok) {

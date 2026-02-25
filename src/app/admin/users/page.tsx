@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Role = "USER" | "PAID" | "ADMIN";
 
@@ -13,7 +13,7 @@ type User = {
   accountNumber?: string | null;
 };
 
-const PAGE_SIZE = 5; 
+const PAGE_SIZE = 5;
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -23,13 +23,79 @@ export default function AdminUsersPage() {
   const [editRole, setEditRole] = useState<Role>("USER");
   const [editAccountNumber, setEditAccountNumber] = useState("");
 
-  
   const [currentPage, setCurrentPage] = useState(1);
 
+  // CSRF token (keširan u state)
+  const [csrf, setCsrf] = useState("");
+
+  // Učitaj CSRF jednom (ali ne oslanjamo se 100% na to)
+  useEffect(() => {
+    fetch("/api/csrf", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setCsrf(d?.token ?? ""))
+      .catch(() => setCsrf(""));
+  }, []);
+
+  // Ako token nije tu, povuci ga baš kad treba (pre PUT/DELETE)
+  const ensureCsrf = async () => {
+    if (csrf) return csrf;
+    const d = await fetch("/api/csrf", { credentials: "include" }).then((r) =>
+      r.json()
+    );
+    const tok = d?.csrf ?? "";
+    setCsrf(tok);
+    return tok;
+  };
+
+  // Helper za JSON fetch sa CSRF na mutacije
+  const apiJson = async (url: string, init?: RequestInit) => {
+    const headers = new Headers(init?.headers);
+
+    const method = (init?.method ?? "GET").toUpperCase();
+    const isMutation = method !== "GET" && method !== "HEAD";
+
+    // Ako šalješ JSON body
+    if (init?.body && !(init.body instanceof FormData)) {
+      if (!headers.has("Content-Type")) {
+        headers.set("Content-Type", "application/json");
+      }
+    }
+
+    // CSRF za mutacije
+    if (isMutation) {
+      const tok = await ensureCsrf();
+      if (!tok) throw new Error("CSRF token nije dostupan. Osveži stranicu.");
+      headers.set("x-csrf-token", tok);
+    }
+
+    const res = await fetch(url, {
+      credentials: "include",
+      ...init,
+      headers,
+    });
+
+    let data: any = null;
+    try {
+      data = await res.json();
+    } catch {
+      // ignore
+    }
+
+    if (!res.ok) {
+      throw new Error(data?.error || `Greška (${res.status})`);
+    }
+
+    return data;
+  };
+
   const load = async () => {
-    const res = await fetch("/api/users", { credentials: "include" });
-    const data = await res.json();
-    setUsers(data);
+    try {
+      const res = await fetch("/api/users", { credentials: "include" });
+      const data = await res.json();
+      setUsers(Array.isArray(data) ? data : []);
+    } catch {
+      setUsers([]);
+    }
   };
 
   useEffect(() => {
@@ -48,43 +114,49 @@ export default function AdminUsersPage() {
   };
 
   const saveEdit = async (id: string) => {
-    await fetch(`/api/users/${id}`, {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        role: editRole,
-        accountNumber: editRole === "PAID" ? editAccountNumber : null,
-      }),
-    });
+    try {
+      await apiJson(`/api/users/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          role: editRole,
+          accountNumber: editRole === "PAID" ? editAccountNumber : null,
+        }),
+      });
 
-    setEditingId(null);
-    load();
+      setEditingId(null);
+      await load();
+    } catch (e: any) {
+      alert(e?.message || "Greška pri izmeni");
+    }
   };
 
   const remove = async (id: string) => {
     if (!confirm("Obrisati korisnika?")) return;
-    await fetch(`/api/users/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    load();
+
+    try {
+      await apiJson(`/api/users/${id}`, {
+        method: "DELETE",
+      });
+
+      await load();
+    } catch (e: any) {
+      alert(e?.message || "Greška pri brisanju");
+    }
   };
 
-  
-  const filtered = users.filter(
-    (u) =>
-      u.email.toLowerCase().includes(query.toLowerCase()) ||
-      u.lastName.toLowerCase().includes(query.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase();
+    return users.filter(
+      (u) =>
+        u.email.toLowerCase().includes(q) ||
+        u.lastName.toLowerCase().includes(q) ||
+        u.firstName.toLowerCase().includes(q)
+    );
+  }, [users, query]);
 
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const startIndex = (currentPage - 1) * PAGE_SIZE;
-  const paginatedUsers = filtered.slice(
-    startIndex,
-    startIndex + PAGE_SIZE
-  );
+  const paginatedUsers = filtered.slice(startIndex, startIndex + PAGE_SIZE);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -127,9 +199,7 @@ export default function AdminUsersPage() {
                     <>
                       <select
                         value={editRole}
-                        onChange={(e) =>
-                          setEditRole(e.target.value as Role)
-                        }
+                        onChange={(e) => setEditRole(e.target.value as Role)}
                         className="border rounded px-2 py-1 w-full"
                       >
                         <option value="USER">USER</option>
@@ -142,9 +212,7 @@ export default function AdminUsersPage() {
                           className="border rounded px-2 py-1 w-full"
                           placeholder="Broj računa"
                           value={editAccountNumber}
-                          onChange={(e) =>
-                            setEditAccountNumber(e.target.value)
-                          }
+                          onChange={(e) => setEditAccountNumber(e.target.value)}
                         />
                       )}
                     </>
@@ -189,11 +257,18 @@ export default function AdminUsersPage() {
               </tr>
             );
           })}
+
+          {paginatedUsers.length === 0 && (
+            <tr>
+              <td className="p-6 text-center text-zinc-500" colSpan={4}>
+                Nema korisnika za prikaz.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 
-      
-      {totalPages > 1 && (
+      {filtered.length > 0 && totalPages > 1 && (
         <div className="flex justify-center items-center gap-2 pt-4">
           <button
             disabled={currentPage === 1}
@@ -208,9 +283,7 @@ export default function AdminUsersPage() {
               key={i}
               onClick={() => setCurrentPage(i + 1)}
               className={`px-3 py-1 rounded border ${
-                currentPage === i + 1
-                  ? "bg-stone-800 text-white"
-                  : ""
+                currentPage === i + 1 ? "bg-stone-800 text-white" : ""
               }`}
             >
               {i + 1}
