@@ -1,5 +1,5 @@
 # Podcast Platforma
-Seminarski rad iz predmeta Internet Tehnologije 2025
+Seminarski rad iz predmeta Internet tehnologije 
 
 Fullstack web aplikacija za upravljanje audio sadržajem.
 
