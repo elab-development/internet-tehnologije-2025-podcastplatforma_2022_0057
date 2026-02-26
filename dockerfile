@@ -23,7 +23,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 
 # 🔥 BITNO – dodaj ovo
-COPY --from=builder /app/src ./src
+COPY --from=builder /app/src ./src 
 
 EXPOSE 3000
 
