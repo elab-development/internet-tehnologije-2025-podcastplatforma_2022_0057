@@ -59,8 +59,9 @@ Aplikacija je dostupna na: **http://localhost:3000**
 
 ### 5. Punjenje baze test podacima (opciono)
 
-Aplikacija j Sve može da se popuni preko korisničkog interfejsa, neophodno je samo u bazi promeniti ulogu USER->ADMIN i dodati Query za tip serijala i izvršiti ga.
+Sve može da se popuni preko korisničkog interfejsa, neophodno je samo u bazi promeniti ulogu USER->ADMIN i dodati Query za tip serijala i izvršiti ga.
 Primer Query-ja:
+```
 INSERT INTO series_types (id, name) VALUES
   ('sport', 'Sport'),
   ('psihologija', 'Psihologija'),
@@ -72,6 +73,7 @@ INSERT INTO series_types (id, name) VALUES
   ('edukacija', 'Edukacija'),
   ('zdravlje', 'Zdravlje'),
   ('motivacija', 'Motivacija i lični razvoj');
+```
 
 ## Struktura projekta
 
