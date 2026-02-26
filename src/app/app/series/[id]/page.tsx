@@ -11,6 +11,7 @@ type Episode = {
   // DODATO:
   transcript: string | null;
   summary: string | null;
+  mediaPath: string;
 };
 
 type Progress = {
@@ -262,10 +263,10 @@ export default function SeriesEpisodesPage() {
               className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg p-6 flex gap-6 items-center"
             >
               {ep.imageUrlEp && (
-                <img
-                  src={ep.imageUrlEp}
-                  className="w-28 h-20 rounded-xl object-cover"
-                />
+                 <img
+                    src={`/api/files/images${ep.imageUrlEp}`}
+                     className="w-28 h-20 rounded-xl object-cover"
+                    />
               )}
 
               <div className="flex-1">
@@ -325,11 +326,11 @@ export default function SeriesEpisodesPage() {
               </button>
 
               {activeEpisode.imageUrlEp && (
-                <img
-                  src={activeEpisode.imageUrlEp}
-                  className="w-20 h-20 rounded-xl object-cover shadow hidden sm:block"
-                />
-              )}
+                  <img
+                    src={`/api/files/images${activeEpisode.imageUrlEp}`}
+                    className="w-20 h-20 rounded-xl object-cover shadow hidden sm:block"
+                  />
+                )}
 
               <div className="flex-1 space-y-3">
                 <div className="font-semibold text-stone-800 flex justify-between items-center">
@@ -350,7 +351,7 @@ export default function SeriesEpisodesPage() {
                   onPause={handlePause}
                   onTimeUpdate={handleTimeUpdate}
                   onEnded={handleEnded}
-                  src={`/api/episodes/${activeEpisode.id}/play`}
+                  src={`/api/files/mediaP/${activeEpisode.mediaPath}`}
                 />
 
                 <div className="flex items-center gap-4">

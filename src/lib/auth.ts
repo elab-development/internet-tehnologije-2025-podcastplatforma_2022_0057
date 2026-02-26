@@ -1,19 +1,28 @@
 import { SignJWT, jwtVerify } from "jose";
 
 export const AUTH_COOKIE = "auth";
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error("Missing JWT_SECRET in env file");
-const key = new TextEncoder().encode(JWT_SECRET);
 
 export type JwtUserClaims = {
   sub: string;
   email: string;
-  name?: string; 
+  name?: string;
 };
 
-const EXPIRES_SECONDS = 60 * 60 * 24 * 30; 
+const EXPIRES_SECONDS = 60 * 60 * 24 * 30;
+
+function getKey() {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new Error("Missing JWT_SECRET in env file");
+  }
+
+  return new TextEncoder().encode(secret);
+}
 
 export async function signAuthToken(claims: JwtUserClaims) {
+  const key = getKey();
+
   return await new SignJWT({ email: claims.email, name: claims.name })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(claims.sub)
@@ -22,13 +31,23 @@ export async function signAuthToken(claims: JwtUserClaims) {
     .sign(key);
 }
 
-export async function verifyAuthToken(token: string): Promise<JwtUserClaims> {
-  const { payload } = await jwtVerify(token, key, { algorithms: ["HS256"] });
+export async function verifyAuthToken(
+  token: string
+): Promise<JwtUserClaims> {
+  const key = getKey();
 
-  if (!payload?.sub || typeof payload.sub !== "string") throw new Error("Invalid token");
-  if (!payload?.email || typeof payload.email !== "string") throw new Error("Invalid token");
+  const { payload } = await jwtVerify(token, key, {
+    algorithms: ["HS256"],
+  });
+
+  if (!payload?.sub || typeof payload.sub !== "string")
+    throw new Error("Invalid token");
+
+  if (!payload?.email || typeof payload.email !== "string")
+    throw new Error("Invalid token");
 
   const name = payload.name;
+
   return {
     sub: payload.sub,
     email: payload.email,

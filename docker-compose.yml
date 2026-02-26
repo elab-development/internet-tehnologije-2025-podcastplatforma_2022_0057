@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:17
+    container_name: podcast-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: podcast
+      POSTGRES_PASSWORD: podcast
+      POSTGRES_DB: podcastdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - podcast_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U podcast -d podcastdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: podcast-app
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://podcast:podcast@db:5432/podcastdb
+      NODE_ENV: production
+      ASSEMBLYAI_API_KEY: f5cdcd831c244f9aa4c18eade8378e41
+      JWT_SECRET: SECRET
+    command: sh -c "npm run db:migrate && npm start"
+    volumes:
+      - ./public/uploads:/app/public/uploads
+      - ./public/episodes:/app/public/episodes
+      - ./public/audios:/app/public/audios
+     
+        
+
+volumes:
+  podcast_pgdata:
+ 
