@@ -33,7 +33,7 @@ services:
     environment:
       DATABASE_URL: postgres://podcast:podcast@db:5432/podcastdb
       NODE_ENV: production
-      ASSEMBLY_API_KEY: 884a930e86614ac4994597a71e99a232
+      ASSEMBLYAI_API_KEY: f5cdcd831c244f9aa4c18eade8378e41
       JWT_SECRET: SECRET
     command: sh -c "npm run db:migrate && npm start"
     volumes:
