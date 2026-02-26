@@ -236,14 +236,25 @@ export default function SeriesEpisodesPage() {
 
         {episodes.map((ep) => {
           const progress = progressMap[ep.id];
-          const percent = progress
-            ? Math.min(
-                100,
-                Math.round(
-                  (progress.positionSec / ep.durationSec) * 100
-                )
-              )
-            : 0;
+          const isActive = activeEpisode?.id === ep.id;
+
+          let percent = 0;
+
+          if (progress?.completed) {
+            percent = 100;
+          } else if (isActive && duration > 0) {
+            // Ako je trenutno aktivna epizoda – koristi realno vreme playera
+            percent = Math.min(
+              100,
+              Math.round((currentTime / duration) * 100)
+            );
+          } else if (progress && ep.durationSec > 0) {
+            // Inače koristi sačuvan progres
+            percent = Math.min(
+              100,
+              Math.round((progress.positionSec / ep.durationSec) * 100)
+            );
+          }
 
           return (
             <div
