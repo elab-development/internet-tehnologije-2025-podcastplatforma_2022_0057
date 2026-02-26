@@ -1,0 +1,905 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Podcast Platform API",
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "http://localhost:3000" }],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "auth",
+        "description": "Auth cookie (JWT) set after login"
+      }
+    },
+    "schemas": {
+      "SeriesListItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "imageUrlSer",
+          "totalDurationSec",
+          "episodesCount",
+          "typeName"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "imageUrlSer": {
+            "type": "string",
+            "description": "Public URL (e.g. /uploads/..)"
+          },
+          "totalDurationSec": { "type": "integer" },
+          "episodesCount": { "type": "integer" },
+          "typeName": { "type": "string", "nullable": true }
+        }
+      },
+
+      "Series": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "imageUrlSer",
+          "typeId",
+          "totalDurationSec",
+          "episodesCount"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "imageUrlSer": { "type": "string" },
+          "typeId": { "type": "string" },
+          "totalDurationSec": { "type": "integer" },
+          "episodesCount": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time", "nullable": true },
+          "updatedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+
+      "Episode": {
+        "type": "object",
+        "required": ["id", "seriesId", "title", "durationSec", "imageUrlEp", "mediaPath"],
+        "properties": {
+          "id": { "type": "string" },
+          "seriesId": { "type": "string" },
+          "title": { "type": "string" },
+          "durationSec": { "type": "integer" },
+          "imageUrlEp": { "type": "string" },
+          "mediaPath": { "type": "string" },
+          "orderIndex": { "type": "integer", "nullable": true },
+          "transcript": { "type": "string", "nullable": true },
+          "summary": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time", "nullable": true },
+          "updatedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+
+      "SeriesType": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" }
+        }
+      },
+      "AuthUser": {
+  "type": "object",
+  "required": ["id", "email", "firstName", "lastName", "role"],
+  "properties": {
+    "id": { "type": "string" },
+    "email": { "type": "string", "format": "email" },
+    "firstName": { "type": "string" },
+    "lastName": { "type": "string" },
+    "role": { "type": "string" }
+  }
+},
+"AuthMeResponse": {
+  "type": "object",
+  "required": ["user"],
+  "properties": {
+    "user": {
+      "oneOf": [
+        { "$ref": "#/components/schemas/AuthUser" },
+        { "type": "null" }
+      ]
+    }
+  }
+},
+"LoginRequest": {
+  "type": "object",
+  "required": ["email", "password"],
+  "properties": {
+    "email": { "type": "string", "format": "email" },
+    "password": { "type": "string", "format": "password" }
+  }
+},
+"RegisterRequest": {
+  "type": "object",
+  "required": ["email", "password", "firstName", "lastName"],
+  "properties": {
+    "email": { "type": "string", "format": "email" },
+    "password": { "type": "string", "format": "password", "minLength": 8 },
+    "firstName": { "type": "string" },
+    "lastName": { "type": "string" },
+    "birthDate": {
+      "type": "string",
+      "format": "date",
+      "nullable": true,
+      "description": "Optional (YYYY-MM-DD)"
+    }
+  }
+},
+"SubscriptionRequest": {
+  "type": "object",
+  "required": ["accountNumber"],
+  "properties": {
+    "accountNumber": {
+      "type": "string",
+      "pattern": "^\\d{3}-\\d{1,13}-\\d{2}$",
+      "example": "160-12345678-90"
+    }
+  }
+},
+"SubscriptionResponse": {
+  "type": "object",
+  "required": ["ok"],
+  "properties": {
+    "ok": { "type": "boolean" },
+    "message": { "type": "string", "nullable": true }
+  }
+},
+"ListenProgress": {
+  "type": "object",
+  "properties": {
+    "userId": { "type": "string" },
+    "episodeId": { "type": "string" },
+    "positionSec": { "type": "integer" },
+    "completed": { "type": "boolean" },
+    "updatedAt": { "type": "string", "format": "date-time", "nullable": true }
+  }
+},
+"ProgressUpsertRequest": {
+  "type": "object",
+  "required": ["episodeId"],
+  "properties": {
+    "episodeId": { "type": "string" },
+    "positionSec": { "type": "integer", "default": 0 },
+    "completed": { "type": "boolean", "default": false }
+  }
+},
+"CsrfResponse": {
+  "type": "object",
+  "required": ["csrf"],
+  "properties": {
+    "csrf": { "type": "string" }
+  }
+},
+"EpisodeProgress": {
+  "type": "object",
+  "required": ["positionSec", "completed"],
+  "properties": {
+    "userId": { "type": "string", "nullable": true },
+    "episodeId": { "type": "string", "nullable": true },
+    "positionSec": { "type": "integer", "default": 0 },
+    "completed": { "type": "boolean", "default": false },
+    "updatedAt": { "type": "string", "format": "date-time", "nullable": true }
+  }
+},
+"EpisodeProgressUpsertRequest": {
+  "type": "object",
+  "properties": {
+    "positionSec": { "type": "integer", "default": 0 },
+    "completed": { "type": "boolean", "default": false }
+  }
+},
+
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      },
+
+      "Ok": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" }
+        }
+      }
+    }
+  },
+
+  "paths": {
+    "/api/series": {
+      "get": {
+        "summary": "List series (with search, filter, pagination)",
+        "parameters": [
+          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Search by title (ILIKE)" },
+          { "name": "type", "in": "query", "schema": { "type": "string" }, "description": "Filter by typeId" },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 6 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Series list",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SeriesListItem" } }
+              }
+            }
+          }
+        }
+      },
+
+      "post": {
+        "summary": "Create series (ADMIN only, multipart upload)",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "description", "typeId", "image"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "typeId": { "type": "string" },
+                  "image": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created series",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Series" } }
+            }
+          },
+          "400": {
+            "description": "Missing fields",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+
+    "/api/series/{id}": {
+      "put": {
+        "summary": "Update series (ADMIN only, multipart; image optional)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "typeId": { "type": "string" },
+                  "image": { "type": "string", "format": "binary", "description": "Optional new cover image" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated series",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Series" } } }
+          },
+          "400": {
+            "description": "Missing id",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "404": {
+            "description": "Not found",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      },
+
+      "delete": {
+        "summary": "Delete series (ADMIN only)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Ok" } } }
+          },
+          "400": {
+            "description": "Missing id",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+
+    "/api/series/{id}/episodes": {
+      "get": {
+        "summary": "List episodes for series (PAID or ADMIN)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Episodes list",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Episode" } }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing id",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "403": {
+            "description": "Subscription required",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "500": {
+            "description": "Server error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+
+    "/api/series-types": {
+      "get": {
+        "summary": "List series types",
+        "responses": {
+          "200": {
+            "description": "Types list",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SeriesType" } }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/api/episodes": {
+      "get": {
+        "summary": "List all episodes",
+        "responses": {
+          "200": {
+            "description": "Episodes list",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Episode" } }
+              }
+            }
+          }
+        }
+      },
+
+      "post": {
+        "summary": "Create episode (ADMIN only, multipart upload; starts AI processing)",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["seriesId", "title", "durationSec", "image", "audio"],
+                "properties": {
+                  "seriesId": { "type": "string" },
+                  "title": { "type": "string" },
+                  "durationSec": { "type": "integer", "minimum": 1 },
+                  "image": { "type": "string", "format": "binary" },
+                  "audio": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created episode",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Episode" } } }
+          },
+          "400": {
+            "description": "Missing fields / invalid upload",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "403": {
+            "description": "Forbidden (not ADMIN)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+
+    "/api/episodes/{id}": {
+      "put": {
+        "summary": "Update episode (ADMIN only, multipart; image/audio optional)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "seriesId": { "type": "string" },
+                  "title": { "type": "string" },
+                  "durationSec": { "type": "integer", "minimum": 1 },
+                  "image": { "type": "string", "format": "binary" },
+                  "audio": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated episode",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Episode" } } }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "403": {
+            "description": "Forbidden (not ADMIN) / CSRF / CORS",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "404": {
+            "description": "Not found",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      },
+
+      "delete": {
+        "summary": "Delete episode (ADMIN only)",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Ok" } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "403": {
+            "description": "Forbidden (not ADMIN) / CSRF / CORS",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "404": {
+            "description": "Not found",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+  "post": {
+    "summary": "Register user (sets auth cookie)",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Registered and logged in (cookie set)",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/AuthUser" } }
+        }
+      },
+      "400": {
+        "description": "Validation error (missing fields, weak password, domain not allowed, email exists...)",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  }
+},
+
+"/api/auth/login": {
+  "post": {
+    "summary": "Login (sets auth cookie)",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": { "$ref": "#/components/schemas/LoginRequest" }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Logged in (cookie set)",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/AuthUser" } }
+        }
+      },
+      "401": {
+        "description": "Invalid credentials",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  }
+},
+
+"/api/auth/logout": {
+  "post": {
+    "summary": "Logout (clears auth cookie)",
+    "responses": {
+      "200": {
+        "description": "Logged out",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Ok" } } }
+      }
+    }
+  }
+},
+
+"/api/auth/me": {
+  "get": {
+    "summary": "Get current user from auth cookie",
+    "responses": {
+      "200": {
+        "description": "User (or null if not logged in)",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/AuthMeResponse" } }
+        }
+      },
+      "401": {
+        "description": "Invalid/expired token",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/AuthMeResponse" } }
+        }
+      }
+    }
+  }
+},
+"/api/users/{id}": {
+  "put": {
+    "summary": "Update user role (ADMIN only)",
+    "security": [{ "cookieAuth": [] }],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" }
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "required": ["role"],
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": ["FREE", "PAID", "ADMIN"]
+              },
+              "accountNumber": {
+                "type": "string",
+                "nullable": true,
+                "description": "Required if role is PAID"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "User updated",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Ok" }
+          }
+        }
+      },
+      "400": {
+        "description": "Invalid input",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "403": {
+        "description": "Forbidden (not ADMIN)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/subscription": {
+  "post": {
+    "summary": "Subscribe current user (sets role=PAID, saves paid profile)",
+    "security": [{ "cookieAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": { "$ref": "#/components/schemas/SubscriptionRequest" }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Subscribed",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/SubscriptionResponse" }
+          }
+        }
+      },
+      "400": {
+        "description": "Already subscribed / invalid account number",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "401": {
+        "description": "Not logged in / invalid token",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "500": {
+        "description": "Server error",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  }
+},
+
+"/api/subscription/cancel": {
+  "post": {
+    "summary": "Cancel subscription (removes paid profile, sets role=USER)",
+    "security": [{ "cookieAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "Canceled",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Ok" } } }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "403": {
+        "description": "Forbidden (not PAID user)",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  }
+},
+"/api/me/progress": {
+  "get": {
+    "summary": "Get listening progress for current user (IDOR-safe)",
+    "security": [{ "cookieAuth": [] }],
+    "responses": {
+      "200": {
+        "description": "List of progress records for the logged-in user",
+        "content": {
+          "application/json": {
+            "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ListenProgress" } }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  },
+
+  "put": {
+    "summary": "Upsert listening progress for current user (IDOR-safe; userId is taken from auth)",
+    "security": [{ "cookieAuth": [] }],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": { "$ref": "#/components/schemas/ProgressUpsertRequest" }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Saved",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Ok" } } }
+      },
+      "400": {
+        "description": "Missing episodeId",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "403": {
+        "description": "Forbidden / CSRF / CORS",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  }
+},
+"/api/csrf": {
+  "get": {
+    "summary": "Get CSRF token",
+    "responses": {
+      "200": {
+        "description": "CSRF token",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/CsrfResponse" }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/episodes/{id}/play": {
+  "get": {
+    "summary": "Play episode (returns media stream or redirect)",
+    "security": [{ "cookieAuth": [] }],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Media stream"
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "403": {
+        "description": "Subscription required",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      }
+    }
+  }
+},
+"/api/episodes/{id}/progress": {
+  "get": {
+    "summary": "Get progress for an episode (current user)",
+    "security": [{ "cookieAuth": [] }],
+    "parameters": [
+      { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+    ],
+    "responses": {
+      "200": {
+        "description": "Progress (defaults to 0/false if missing)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/EpisodeProgress" }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "500": {
+        "description": "Server error",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  },
+
+  "put": {
+    "summary": "Save progress for an episode (upsert for current user)",
+    "security": [{ "cookieAuth": [] }],
+    "parameters": [
+      { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": { "$ref": "#/components/schemas/EpisodeProgressUpsertRequest" }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Saved",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Ok" } } }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "500": {
+        "description": "Server error",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  }
+}
+  }
+}

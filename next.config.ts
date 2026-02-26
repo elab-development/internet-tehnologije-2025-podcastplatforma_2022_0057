@@ -4,5 +4,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
 };
+module.exports = {
+  reactStrictMode: false
+}
 
 export default nextConfig;
