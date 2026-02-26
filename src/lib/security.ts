@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const ALLOWED = (process.env.ALLOWED_ORIGINS ?? "http://localhost:3000")
+const ALLOWED = (process.env.ALLOWED_ORIGINS ?? "https://internet-tehnologije-2025-podcastplatforma2022-production.up.railway.app/")
   .split(",")
   .map(s => s.trim())
   .filter(Boolean);
@@ -20,3 +20,4 @@ export function requireOrigin(req: Request) {
 
   return null;
 }
+{/*"http://localhost:3000"*/}
