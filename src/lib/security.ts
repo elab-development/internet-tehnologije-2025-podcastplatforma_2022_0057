@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
 
-const ALLOWED = (process.env.ALLOWED_ORIGINS ?? "https://internet-tehnologije-2025-podcastplatforma2022-production.up.railway.app/")
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
-
 export function requireOrigin(req: Request) {
   const origin = req.headers.get("origin");
 
-  // Postman, server-to-server → dozvoli
+  // Dozvoli ako nema origina (npr. serverski pozivi ili Postman)
   if (!origin) return null;
 
-  if (!ALLOWED.includes(origin)) {
+  // Fleksibilna provera: dozvoli ako domen sadrži railway.app ili localhost
+  const isAllowed = origin.includes("railway.app") || origin.includes("localhost");
+
+  if (!isAllowed) {
     return NextResponse.json(
       { error: "CORS blocked" },
       { status: 403 }
