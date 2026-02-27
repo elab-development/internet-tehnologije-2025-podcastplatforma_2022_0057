@@ -1,0 +1,50 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "feature/ci-cd" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # FAZA 1: TESTIRANJE
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Preuzmi kod
+        uses: actions/checkout@v4
+
+      - name: Postavi Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instaliraj zavisnosti
+        run: npm install
+
+      - name: Pokreni sve testove
+        run: npm run test:run
+
+  # FAZA 2: DOCKER BUILD (Pokreće se samo ako Faza 1 prođe)
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Preuzmi kod
+        uses: actions/checkout@v4
+
+      - name: Log in na Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build i Push Docker slike
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/podcast-platform:latest
