@@ -88,15 +88,15 @@ export default function StatsPage() {
     load();
   }, []);
 
-  // ====== KARTICE (summary brojevi) ======
+  
   const summary = useMemo(() => {
     const seriesCount = series.length;
-    const episodesCount = episodes.length; // realno iz epizoda
+    const episodesCount = episodes.length; 
     const usersCount = users.length;
 
     const paidCount = users.filter((u) => u.role === "PAID").length;
 
-    // ukupno trajanje (iz serijala — jer se kod tebe računa u serijalu)
+    
     const totalSec = series.reduce(
       (acc, s) => acc + Number(s.totalDurationSec ?? 0),
       0
@@ -106,7 +106,7 @@ export default function StatsPage() {
     return { seriesCount, episodesCount, usersCount, paidCount, totalMin };
   }, [series, episodes, users]);
 
-  // 1) PIE: broj serijala po tipu
+  
   const pieSeriesByType = useMemo(() => {
     const data: any[] = [["Tip serijala", "Broj serijala"]];
     const counts = new Map<string, number>();
@@ -122,7 +122,7 @@ export default function StatsPage() {
     return data;
   }, [series]);
 
-  // 2) PIE: korisnici po ulozi
+  
   const usersByRole = useMemo(() => {
     const data: any[] = [["Uloga", "Broj korisnika"]];
     const counts = new Map<string, number>();
@@ -136,7 +136,7 @@ export default function StatsPage() {
     return data;
   }, [users]);
 
-  // 3) COLUMN: top serijali po broju epizoda (iz series.episodesCount)
+  
   const topSeriesByEpisodesCount = useMemo(() => {
     const sorted = [...series]
       .sort((a, b) => Number(b.episodesCount ?? 0) - Number(a.episodesCount ?? 0))
@@ -149,7 +149,7 @@ export default function StatsPage() {
     return data;
   }, [series]);
 
-  // 4) BAR: top serijali po trajanju (minute)
+  
   const topSeriesByDurationMin = useMemo(() => {
     const sorted = [...series]
       .sort(

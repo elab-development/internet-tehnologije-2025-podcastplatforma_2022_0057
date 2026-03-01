@@ -9,10 +9,10 @@ import { verifyAuthToken, AUTH_COOKIE } from "@/lib/auth";
 
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> } // ostavi ovako ako ti TS to traži
+  { params }: { params: Promise<{ id: string }> } 
 ) {
   try {
-    // 0) Auth: uzmi token iz cookie-ja
+    
     const cookieStore = await cookies();
     const token = cookieStore.get(AUTH_COOKIE)?.value;
 
@@ -20,10 +20,10 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 1) Verifikuj token (jose je async!)
+    
     const claims = await verifyAuthToken(token);
 
-    // 2) Učitaj user-a iz baze (da dobiješ role)
+    
     const [u] = await db
       .select({ id: users.id, role: users.role })
       .from(users)
@@ -33,7 +33,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 3) Provera pretplate (dozvoli i ADMIN-u)
+    
     if (u.role !== "PAID" && u.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Subscription required" },
@@ -41,7 +41,7 @@ export async function GET(
       );
     }
 
-    // 4) Params (serijal id)
+    
     const resolvedParams = await params;
     const seriesId = resolvedParams.id;
 
@@ -52,7 +52,7 @@ export async function GET(
       );
     }
 
-    // 5) Vrati epizode
+    
     const seriesEpisodes = await db
       .select()
       .from(episodes)

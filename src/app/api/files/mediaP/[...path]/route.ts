@@ -7,14 +7,14 @@ export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> } // Mora biti "path" jer se tako zove folder [...path]
+  { params }: { params: Promise<{ path: string[] }> } 
 ) {
   try {
     const resolvedParams = await params;
-    // Pošto je [...path], segments će biti niz (npr. ["fajl.mp3"])
+    
     const segments = resolvedParams.path;
     
-    // Uzimamo poslednji segment kao ime fajla
+    
     const filename = segments[segments.length - 1];
     
     const filePath = path.join(process.cwd(), "public/audios", filename);
@@ -26,14 +26,14 @@ export async function GET(
     const stats = fs.statSync(filePath);
     const nodeStream = fs.createReadStream(filePath);
     
-    // Pretvaranje u Web Stream da bi Next.js mogao da ga strimuje
+    
     const webStream = Readable.toWeb(nodeStream);
 
     return new NextResponse(webStream as ReadableStream, {
       headers: {
         "Content-Type": "audio/mpeg",
         "Content-Length": stats.size.toString(),
-        "Accept-Ranges": "bytes", // Ključno za premotavanje i trajanje (da ne bude 0:00)
+        "Accept-Ranges": "bytes", 
       },
     });
   } catch (err) {

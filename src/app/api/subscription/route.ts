@@ -14,11 +14,11 @@ export async function POST(req: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
 
-// ✅ CORS zaštita
+
   const cors = requireOrigin(req);
   if (cors) return cors;
 
-  // ✅ CSRF zaštita
+  
   const csrf = await requireCsrf(req);
   if (csrf) return csrf;
  

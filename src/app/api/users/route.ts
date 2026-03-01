@@ -9,7 +9,7 @@ import { users, paidProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET(req: Request) {
-  // ✅ CORS zaštita (opciono ali preporučeno)
+  
   const cors = requireOrigin(req);
   if (cors) return cors;
 

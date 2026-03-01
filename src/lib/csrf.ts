@@ -12,7 +12,7 @@ export async function getOrSetCsrfToken() {
   if (!token) {
     token = randomUUID();
     store.set(CSRF_COOKIE, token, {
-      httpOnly: false, // FE mora da procita token i posalje u header
+      httpOnly: false, 
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",

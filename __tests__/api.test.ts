@@ -2,14 +2,14 @@ import { describe, it, expect, vi } from 'vitest';
 import { POST } from '@/app/api/episodes/route';
 import { NextRequest } from 'next/server';
 
-// 1. Foliramo cookies da vrate prazan token
+
 vi.mock('next/headers', () => ({
   cookies: vi.fn(() => ({
-    get: vi.fn().mockReturnValue(undefined), // Simuliramo da nema tokena
+    get: vi.fn().mockReturnValue(undefined), 
   })),
 }));
 
-// 2. Foliramo bazu podataka da ne bi stvarno pokušavao da se poveže
+
 vi.mock('@/db', () => ({
   db: {
     select: vi.fn().mockReturnThis(),

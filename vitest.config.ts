@@ -6,11 +6,11 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    globals: true, // Da ne moraš stalno uvoziti 'describe' i 'it'
+    globals: true, 
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'), // Ovo rješava tvoje @/ putanje
+      '@': path.resolve(__dirname, './src'), 
     },
   },
 })

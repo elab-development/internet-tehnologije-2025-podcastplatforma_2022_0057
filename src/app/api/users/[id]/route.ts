@@ -15,7 +15,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
   if (csrf) return csrf;
 
   const auth = await requireAdmin();
-  if (!auth.ok) return auth.res; // ✅ TS zna da je res ovde
+  if (!auth.ok) return auth.res; 
 
   const { id } = await context.params;
 
@@ -57,7 +57,7 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
 
   const { id } = await context.params;
 
-  // ne može da obriše sebe
+  
   if (auth.admin.id === id) {
     return NextResponse.json(
       { error: "Ne možete obrisati sopstveni nalog" },

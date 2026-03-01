@@ -10,14 +10,14 @@ export const processPodcastAudio = async (filePath) => {
   try {
     const transcript = await client.transcripts.transcribe({
       audio: filePath,
-      // Promenjeno na universal-1 jer on najbolje radi sa osnovnim summarization modelom
+      
       speech_models: ["universal-2"], 
       summarization: true,
       summary_model: 'informative',
       summary_type: 'bullets',
     });
 
-    // Ako je transkripcija uspela, SDK će vratiti objekat
+    
     if (transcript.status === 'error') {
       throw new Error(transcript.error);
     }

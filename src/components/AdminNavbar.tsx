@@ -12,7 +12,7 @@ export default function AdminNavbar() {
 
   const handleLogout = async () => {
     await logout();
-    router.push("/"); // ili "/login" ako želiš
+    router.push("/"); 
   };
 
   return (
@@ -34,7 +34,7 @@ export default function AdminNavbar() {
           Korisnici
         </Link>
 
-        {/* ✅ NOVO */}
+        
         <Link href="/admin/stats" className="hover:text-zinc-900">
           Statistika
         </Link>

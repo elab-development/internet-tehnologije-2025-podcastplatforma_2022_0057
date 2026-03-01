@@ -31,7 +31,7 @@ async function requireAdmin() {
 }
 
 async function saveUploadToPublic(file: File) {
-  // public/uploads
+  
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
   await fs.mkdir(uploadsDir, { recursive: true });
 
@@ -42,7 +42,7 @@ async function saveUploadToPublic(file: File) {
   const arrayBuffer = await file.arrayBuffer();
   await fs.writeFile(fullPath, Buffer.from(arrayBuffer));
 
-  // putanja koja se čuva u bazi i koristi u <img src="...">
+  
   return `/uploads/${filename}`;
 }
 
@@ -50,32 +50,32 @@ export async function PUT(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  // ✅ CORS zaštita
+  
   const cors = requireOrigin(req);
   if (cors) return cors;
 
-  // ✅ CSRF zaštita
+  
   const csrf = await requireCsrf(req);
   if (csrf) return csrf;
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
 
-  // ✅ Next.js 15: params je Promise
+  
   const { id } = await context.params;
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  // uzmi postojeći serijal (da zadrži staru sliku ako nema nove)
+  
   const [existing] = await db.select().from(series).where(eq(series.id, id));
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const form = await req.formData();
 
-  // tekstualna polja
+  
   const title = (form.get("title") as string | null) ?? undefined;
   const description = (form.get("description") as string | null) ?? undefined;
   const typeId = (form.get("typeId") as string | null) ?? undefined;
 
-  // slika (opciono)
+  
   const image = form.get("image");
   let imageUrlSer: string | undefined = undefined;
 
@@ -83,7 +83,7 @@ export async function PUT(
     imageUrlSer = await saveUploadToPublic(image);
   }
 
-  // PATCH: dozvoli samo ova polja
+  
   const patch: Partial<typeof series.$inferInsert> = {
     ...(title !== undefined ? { title } : {}),
     ...(description !== undefined ? { description } : {}),
@@ -92,7 +92,7 @@ export async function PUT(
     updatedAt: new Date(),
   };
 
-  // Ako neko pošalje prazno sve (npr. ništa ne menja) — i dalje setuje updatedAt, OK.
+  
 
   const [updated] = await db
     .update(series)
@@ -107,17 +107,17 @@ export async function DELETE(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  // ✅ CORS zaštita
+  
   const cors = requireOrigin(req);
   if (cors) return cors;
 
-  // ✅ CSRF zaštita
+  
   const csrf = await requireCsrf(req);
   if (csrf) return csrf;
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
 
-  // ✅ Next.js 15: params je Promise
+  
   const { id } = await context.params;
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 

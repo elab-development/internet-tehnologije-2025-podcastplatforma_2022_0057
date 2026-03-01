@@ -12,7 +12,7 @@ import { writeFile, mkdir } from "fs/promises";
 import { requireOrigin } from "@/lib/security";
 import { requireCsrf } from "@/lib/csrf";
 
-/* ----------------------- POMOĆNE FUNKCIJE ----------------------- */
+
 
 async function recalcSeries(seriesId: string) {
   const [stats] = await db
@@ -46,7 +46,7 @@ async function saveUpload(file: File, folder: string) {
   const filepath = path.join(uploadDir, filename);
   await writeFile(filepath, buffer);
 
-  return filename; // ⚠ vraćamo samo ime fajla
+  return filename; 
 }
 
 async function requireAdmin() {
@@ -79,11 +79,11 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
   const auth = await requireAdmin();
   if (!auth.ok) return auth.res;
-  // ✅ CORS zaštita
+  
   const cors = requireOrigin(req);
   if (cors) return cors;
 
-  // ✅ CSRF zaštita
+  
   const csrf = await requireCsrf(req);
   if (csrf) return csrf;
 
@@ -128,16 +128,16 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     patch.durationSec = n;
   }
 
-  // ✅ SLUČAJ 1: Upload slike
+  
   if (image instanceof File && image.size > 0) {
     const imageFilename = await saveUpload(image, "episodes");
     patch.imageUrlEp = `/episodes/${imageFilename}`;
   }
 
-  // ✅ SLUČAJ 2: Upload audio fajla
+  
   if (audio instanceof File && audio.size > 0) {
     const audioFilename = await saveUpload(audio, "audios");
-    patch.mediaPath = audioFilename; // samo ime fajla
+    patch.mediaPath = audioFilename; 
   }
 
   const [updated] = await db
@@ -161,11 +161,11 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
 
 export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
-  // ✅ CORS zaštita
+  
   const cors = requireOrigin(req);
   if (cors) return cors;
 
-  // ✅ CSRF zaštita
+  
   const csrf = await requireCsrf(req);
   if (csrf) return csrf;
 

@@ -29,14 +29,14 @@ export default function AdminSeriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingOriginal, setEditingOriginal] = useState<Series | null>(null);
 
-  // ✅ CSRF
+  
   const [csrf, setCsrf] = useState("");
 
-  // ✅ učitaj CSRF token (ruta ti vraća { csrf: token } po tvom kodu)
+ 
   useEffect(() => {
     fetch("/api/csrf", { credentials: "include" })
       .then((r) => r.json())
-      .then((d) => setCsrf(d.csrf ?? "")) // <-- OVDE je bitno: d.csrf
+      .then((d) => setCsrf(d.csrf ?? "")) 
       .catch(() => setCsrf(""));
   }, []);
 
@@ -90,7 +90,7 @@ export default function AdminSeriesPage() {
       return;
     }
 
-    // CREATE
+    
     if (!editingId) {
       if (!title.trim() || !description.trim() || !typeId || !imageFile) {
         alert("Popunite sva polja i izaberite sliku.");
@@ -123,7 +123,7 @@ export default function AdminSeriesPage() {
       return;
     }
 
-    // EDIT
+    
     const base = editingOriginal;
     if (!base) {
       alert("Greška: nema originalnog serijala.");

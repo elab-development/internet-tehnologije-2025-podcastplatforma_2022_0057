@@ -16,13 +16,13 @@ export default function SubscriptionPage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ CSRF kao u admin page
+  
   const [csrf, setCsrf] = useState("");
 
   useEffect(() => {
     fetch("/api/csrf", { credentials: "include" })
       .then((r) => r.json())
-      .then((d) => setCsrf(d.csrf ?? "")) // ruta vraća { csrf: token }
+      .then((d) => setCsrf(d.csrf ?? "")) 
       .catch(() => setCsrf(""));
   }, []);
 

@@ -9,14 +9,13 @@ import { eq } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
 
-// ✅ POPRAVLJENO: Koristimo direktnu destrukturizaciju { params } umesto context: { params }
-// Ovo je jedini način da Next.js 15+ TypeScript prepozna validnu rutu
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // ✅ POPRAVLJENO: Await-ujemo params direktno
+    
     const { id } = await params;
 
     if (!id) {
@@ -77,14 +76,14 @@ export async function GET(
     if (ext === ".m4a") contentType = "audio/mp4";
     if (ext === ".wav") contentType = "audio/wav";
 
-    // 🔥 RANGE SUPPORT
+    
     if (range) {
       const parts = range.replace(/bytes=/, "").split("-");
       const start = parseInt(parts[0], 10);
       const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
       const chunkSize = end - start + 1;
 
-      // @ts-ignore - fs stream se konvertuje u ReadableStream
+      
       const stream = fs.createReadStream(filePath, { start, end });
 
       return new NextResponse(stream as any, {
@@ -98,7 +97,7 @@ export async function GET(
       });
     }
 
-    // @ts-ignore
+    
     const stream = fs.createReadStream(filePath);
 
     return new NextResponse(stream as any, {

@@ -8,7 +8,7 @@ type Episode = {
   title: string;
   durationSec: number;
   imageUrlEp: string | null;
-  // DODATO:
+  
   transcript: string | null;
   summary: string | null;
   mediaPath: string;
@@ -34,7 +34,7 @@ export default function SeriesEpisodesPage() {
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   
-  // DODATO: Stanje za prikaz transkripta
+  
   const [showTranscript, setShowTranscript] = useState(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -48,7 +48,7 @@ export default function SeriesEpisodesPage() {
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
-  /* ================= LOAD EPISODES ================= */
+  
 
   useEffect(() => {
     if (!id) return;
@@ -77,7 +77,7 @@ export default function SeriesEpisodesPage() {
     load();
   }, [id, router]);
 
-  /* ================= LOAD PROGRESS ================= */
+  
 
   useEffect(() => {
     if (episodes.length === 0) return;
@@ -108,7 +108,7 @@ export default function SeriesEpisodesPage() {
     loadProgress();
   }, [episodes]);
 
-  /* ================= RESUME ================= */
+  
 
   useEffect(() => {
     if (!activeEpisode || !audioRef.current) return;
@@ -121,11 +121,11 @@ export default function SeriesEpisodesPage() {
     }
 
     lastSavedRef.current = 0;
-    // Resetuj prikaz transkripta kada se promeni epizoda
+    
     setShowTranscript(false);
   }, [activeEpisode]);
 
-  /* ================= AUTOSAVE ================= */
+  
 
   const handleTimeUpdate = async () => {
     if (!audioRef.current || !activeEpisode) return;
@@ -244,13 +244,13 @@ export default function SeriesEpisodesPage() {
           if (progress?.completed) {
             percent = 100;
           } else if (isActive && duration > 0) {
-            // Ako je trenutno aktivna epizoda – koristi realno vreme playera
+            
             percent = Math.min(
               100,
               Math.round((currentTime / duration) * 100)
             );
           } else if (progress && ep.durationSec > 0) {
-            // Inače koristi sačuvan progres
+            
             percent = Math.min(
               100,
               Math.round((progress.positionSec / ep.durationSec) * 100)
@@ -400,7 +400,7 @@ export default function SeriesEpisodesPage() {
               </div>
             </div>
 
-            {/* AI SEKCIJA (Pojavljuje se na klik) */}
+            
             {showTranscript && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="bg-stone-100 p-4 rounded-2xl border border-stone-200">

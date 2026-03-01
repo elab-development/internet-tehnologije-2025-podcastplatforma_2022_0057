@@ -39,7 +39,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Missing episodeId" }, { status: 400 });
   }
 
-  // ✅ IDOR: userId je ALWAYS auth.user.id
+  
   await db
     .insert(listenProgress)
     .values({

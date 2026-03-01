@@ -7,8 +7,8 @@ type Episode = {
   seriesId: string;
   title: string;
   durationSec: number;
-  imageUrlEp: string; // npr "/uploads/xxx.jpg"
-  mediaPath: string; // npr "/uploads/yyy.mp3"
+  imageUrlEp: string; 
+  mediaPath: string; 
 };
 
 type Series = {
@@ -34,7 +34,7 @@ export default function AdminEpisodesPage() {
   const [csrf, setCsrf] = useState("");
   const [csrfLoading, setCsrfLoading] = useState(true);
 
-  // edit mode
+  
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingOriginal, setEditingOriginal] = useState<Episode | null>(null);
 
@@ -69,11 +69,10 @@ export default function AdminEpisodesPage() {
 
         const data = await csrfRes.json();
 
-        // ruta ti vraća { csrf: token }
+        
         setCsrf(data?.csrf ?? "");
 
-        // ako tvoja ruta vraća { csrfToken }, zameni sa:
-        // setCsrf(data?.csrfToken ?? "");
+        
       } catch (e) {
         console.error("CSRF error", e);
         setCsrf("");
@@ -114,7 +113,7 @@ export default function AdminEpisodesPage() {
     setTitle(e.title ?? "");
     setDurationSec(String(e.durationSec ?? ""));
 
-    // file input ne može da se setuje programatski
+    
     setImageFile(null);
     setAudioFile(null);
     setImageName("");
@@ -143,7 +142,7 @@ export default function AdminEpisodesPage() {
   const submit = async () => {
     if (!ensureCsrf()) return;
 
-    // CREATE: mora sve
+    
     if (!editingId) {
       if (!seriesId || !title.trim() || !durationSec || !imageFile || !audioFile) {
         alert("Popunite sva polja i izaberite sliku + audio fajl.");
@@ -175,7 +174,7 @@ export default function AdminEpisodesPage() {
       return;
     }
 
-    // EDIT: može delimično, fajlovi opciono
+    
     const base = editingOriginal;
     if (!base) {
       alert("Greška: nema originalne epizode.");

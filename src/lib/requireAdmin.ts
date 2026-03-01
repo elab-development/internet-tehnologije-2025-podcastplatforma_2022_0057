@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 
 type AdminUser = typeof users.$inferSelect;
 
-// ✅ uvek vraća ISTI oblik (shape) -> TS više ne crveni
+
 export async function requireAdmin(): Promise<{
   ok: true;
   admin: AdminUser;

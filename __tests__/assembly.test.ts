@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 // 1. Mock-ujemo AssemblyAI pre importa
 vi.mock('assemblyai', () => {
   return {
-    // Mora biti obična 'function' da bi mogla da se pozove sa 'new'
+    
     AssemblyAI: vi.fn().mockImplementation(function() {
       return {
         transcripts: {

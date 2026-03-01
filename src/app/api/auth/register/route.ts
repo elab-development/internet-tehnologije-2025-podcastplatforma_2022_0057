@@ -18,7 +18,7 @@ type Body = {
 export async function POST(req: Request) {
   const { email, password, firstName, lastName, birthDate } = (await req.json()) as Body;
 
-  // 1. Osnovna provera popunjenosti (FZ 1)
+  
   if (!email || !password || !firstName || !lastName) {
     return NextResponse.json({ error: "Morate uneti sve podatke" }, { status: 400 });
   }

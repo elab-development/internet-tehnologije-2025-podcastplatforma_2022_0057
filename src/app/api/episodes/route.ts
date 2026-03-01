@@ -11,7 +11,7 @@ import path from "path";
 import { writeFile, mkdir } from "fs/promises";
 import { processPodcastAudio } from "@/lib/assemblyai";
 
-/* ----------------------- POMOĆNE FUNKCIJE ----------------------- */
+
 
 async function recalcSeries(seriesId: string) {
   const [stats] = await db
@@ -48,7 +48,7 @@ async function saveUpload(file: File, folder: string) {
   return filename; 
 }
 
-/* ----------------------- POST (KREIRANJE EPIZODE) ----------------------- */
+
 
 export async function POST(req: Request) {
   try {
@@ -88,17 +88,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Upload fajlova lokalno
+    
     const imageFilename = await saveUpload(image, "episodes");
     const imageUrlEp = `/episodes/${imageFilename}`;
 
     const audioFilename = await saveUpload(audio, "audios");
     const fullAudioPath = path.join(process.cwd(), "public", "audios", audioFilename);
     
-    // 2. Kreiranje ID-ja unapred
+    
     const newEpisodeId = randomUUID();
 
-    // 3. ODMAH upisujemo epizodu u bazu sa "loading" statusom
+    
     const [created] = await db
       .insert(episodes)
       .values({
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
       })
       .returning();
 
-    // 4. POZADINSKA AI OBRADA (Ne koristimo await ovde da ne kočimo UI)
+    
     (async () => {
       try {
         console.log("⏳ POZADINA: Krećem AI obradu za:", audioFilename);
@@ -129,26 +129,26 @@ export async function POST(req: Request) {
               updatedAt: new Date()
             })
             .where(eq(episodes.id, newEpisodeId));
-          console.log("✅ POZADINA: Uspešno ažurirana epizoda:", title);
+          console.log("POZADINA: Uspešno ažurirana epizoda:", title);
         }
       } catch (e: any) {
-        console.error("❌ POZADINA GREŠKA:", e.message);
+        console.error("POZADINA GREŠKA:", e.message);
       }
     })();
 
-    // 5. Osvežavanje statistike serijala (ovo je brzo, može await)
+    
     await recalcSeries(seriesId);
 
-    // Vraćamo odgovor odmah klijentu
+    
     return NextResponse.json(created);
 
   } catch (globalErr: any) {
-    console.error("❌ GLOBALNA GREŠKA U RUTI:", globalErr.message);
+    console.error("GLOBALNA GREŠKA U RUTI:", globalErr.message);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
-/* ----------------------- GET (LISTA EPIZODA) ----------------------- */
+
 
 export async function GET() {
   const data = await db.select().from(episodes);

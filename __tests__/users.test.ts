@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DELETE } from '@/app/api/users/[id]/route'; // Proveri da li je putanja tačna zavisno od tvog foldera
+import { DELETE } from '@/app/api/users/[id]/route'; 
 import { NextRequest } from 'next/server';
 
 // 1. Mock-ujemo bazu podataka

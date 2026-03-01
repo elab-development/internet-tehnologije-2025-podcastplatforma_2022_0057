@@ -7,9 +7,7 @@ import { db } from "@/db";
 import { listenProgress } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
-/* =======================
-   GET – učitaj progres
-======================= */
+
 export async function GET(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -36,7 +34,7 @@ export async function GET(
       );
 
     if (!progress) {
-      // 🔥 VAŽNO: ne vraćamo 404
+      
       return NextResponse.json({
         positionSec: 0,
         completed: false,
@@ -51,9 +49,7 @@ export async function GET(
   }
 }
 
-/* =======================
-   PUT – sačuvaj progres
-======================= */
+
 export async function PUT(
   req: Request,
   context: { params: Promise<{ id: string }> }

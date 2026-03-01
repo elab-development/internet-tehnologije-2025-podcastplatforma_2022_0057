@@ -25,10 +25,10 @@ export default function AdminUsersPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
 
-  // CSRF token (keširan u state)
+  
   const [csrf, setCsrf] = useState("");
 
-  // Učitaj CSRF jednom (ali ne oslanjamo se 100% na to)
+  
   useEffect(() => {
     fetch("/api/csrf", { credentials: "include" })
       .then((r) => r.json())
@@ -36,7 +36,7 @@ export default function AdminUsersPage() {
       .catch(() => setCsrf(""));
   }, []);
 
-  // Ako token nije tu, povuci ga baš kad treba (pre PUT/DELETE)
+  
   const ensureCsrf = async () => {
     if (csrf) return csrf;
     const d = await fetch("/api/csrf", { credentials: "include" }).then((r) =>
@@ -47,21 +47,21 @@ export default function AdminUsersPage() {
     return tok;
   };
 
-  // Helper za JSON fetch sa CSRF na mutacije
+  
   const apiJson = async (url: string, init?: RequestInit) => {
     const headers = new Headers(init?.headers);
 
     const method = (init?.method ?? "GET").toUpperCase();
     const isMutation = method !== "GET" && method !== "HEAD";
 
-    // Ako šalješ JSON body
+    
     if (init?.body && !(init.body instanceof FormData)) {
       if (!headers.has("Content-Type")) {
         headers.set("Content-Type", "application/json");
       }
     }
 
-    // CSRF za mutacije
+    
     if (isMutation) {
       const tok = await ensureCsrf();
       if (!tok) throw new Error("CSRF token nije dostupan. Osveži stranicu.");

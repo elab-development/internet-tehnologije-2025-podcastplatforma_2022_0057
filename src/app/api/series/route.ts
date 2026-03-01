@@ -47,14 +47,14 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  // ✅ CORS zaštita
+  
   const cors = requireOrigin(req);
   if (cors) return cors;
 
-  // ✅ CSRF zaštita
+  
   const csrf = await requireCsrf(req);
   if (csrf) return csrf;
-  // auth
+  
   const cookieStore = await cookies();
   const token = cookieStore.get("auth")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // ✅ formData (upload)
+  
   const form = await req.formData();
   const title = String(form.get("title") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Nedostaju podaci ili slika." }, { status: 400 });
   }
 
-  // snimi sliku u /public/uploads
+  
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
   await fs.mkdir(uploadsDir, { recursive: true });
 
