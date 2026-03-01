@@ -9,8 +9,12 @@ Aplikacija omogućava korisnicima pregled i slušanje podcast epizoda, dok admin
 
 ### Uloge korisnika
 
-- **Admin** — Upravljanje korisnicima, dodavanje i brisanje serijala, dodavanje i brisanje episoda.
-- **Korisnik ** — Pregled javne početne strane, registracija i prijava na sistem, pregled, pretraga i filtriranje serijala, pretplata na platformu
+
+- **Admin** — Prijava na sistem, upravljanje korisnicima (pregled, pretraga, brisanje i izmena uloge), dodavanje i brisanje serijala, dodavanje i brisanje epizoda.
+
+- **Korisnik** — Pregled javne početne strane, registracija i prijava na sistem, pregled, pretraga i filtriranje serijala, pokretanje pretplate, odjava sa sistema.
+
+- **Pretplaćeni korisnik** — Prijava na sistem, pregled, pretraga i filtriranje serijala, slušanje sadržaja platforme, odjava sa sistema.
 
 ### Tehnologije
 
@@ -41,23 +45,33 @@ cd internet-tehnologije-2025-podcastplatforma_2022_0057
 Kreiraj `.env` fajl u root folderu:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/podcast_db
-JWT_SECRET=tvoj_tajni_kljuc
-ASSEMBLYAI_API_KEY=tvoj_api_kljuc
+DATABASE_URL=postgres://podcast:podcast@db:5432/podcastdb
+API_URL=http://web:3000
+ASSEMBLYAI_API_KEY=0f3ab07c9150405a991d292bbecf165e
+JWT_SECRET=SECRET
+JWT_EXPIRES=7d
+
 ```
 ### 3. Lokalni build
 
 ```bash
 npm install
 ```
-### 4. Pokretanje sa Docker Compose
+### 4. Pokretanje aplikacije lokalno
+
+```bash
+npm run dev
+```
+
+
+### 5. Pokretanje sa Docker Compose
 
 ```bash
 docker compose up --build
 ```
 Aplikacija je dostupna na: **http://localhost:3000**
 
-### 5. Punjenje baze test podacima (opciono)
+### 6. Punjenje baze test podacima (opciono)
 
 Sve može da se popuni preko korisničkog interfejsa, neophodno je samo u bazi promeniti ulogu USER->ADMIN i dodati Query za tip serijala i izvršiti ga.
 Primer Query-ja:
